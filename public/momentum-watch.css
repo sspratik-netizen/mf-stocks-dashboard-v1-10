@@ -1,0 +1,143 @@
+
+.mw-toolbar{display:flex;gap:14px;align-items:end;flex-wrap:wrap}
+.mw-toolbar label{display:flex;flex-direction:column;gap:5px;color:#657183;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.mw-toolbar select,.mw-toolbar input{min-width:150px;padding:9px 10px;border:1px solid #dce2e9;border-radius:7px;background:white;color:#263244}
+.mw-toolbar input{min-width:220px}
+.mw-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.mw-fund-card{background:#fff;border:1px solid #e3e8ee;border-radius:10px;padding:13px}
+.mw-fund-card h3{margin:3px 0 10px;font-size:15px}
+.fund-line{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid #eef1f4;font-size:11px}
+.fund-line b{color:#718096}
+.fund-name small{display:block;color:#98a2af;font-size:9px;margin-top:3px}
+.mw-signal{display:inline-flex;border-radius:6px;padding:4px 7px;font-size:10px;font-weight:900}
+.mw-signal.watch{background:#fff5df;color:#9a6300}
+.mw-signal.monitor{background:#fff8e8;color:#9b7700}
+.mw-signal.neutral{background:#f1f3f6;color:#7b8592}
+@media(max-width:850px){.mw-cards{grid-template-columns:1fr}.mw-toolbar input{min-width:100%}}
+
+
+/* Professional restrained visual treatment */
+.mw-fund-card {
+  position: relative;
+  background: linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
+  box-shadow: 0 4px 14px rgba(25,38,60,.045);
+}
+.mw-fund-card:first-child { border-top: 3px solid #2f6fed; }
+.mw-fund-card:last-child { border-top: 3px solid #6b7c93; }
+.mw-fund-card .eyebrow { color:#55719a; }
+.fund-line span { color:#344054; }
+.fund-line b { color:#55719a; }
+.mw-toolbar label { color:#526174; }
+.mw-toolbar select:focus,.mw-toolbar input:focus {
+  outline: 2px solid rgba(47,111,237,.14);
+  border-color:#7ea6ef;
+}
+.table-wrap { box-shadow: 0 5px 18px rgba(25,38,60,.05); }
+thead th { background:#f7f9fc; color:#66758a; }
+tbody tr:nth-child(even) { background:#fcfdff; }
+tbody tr:hover { background:#f2f7ff; }
+.stock-title a {
+  color:#174ea6;
+  text-decoration:none;
+  font-weight:800;
+}
+.stock-title a:hover { text-decoration:underline; }
+.mw-chart-btn {
+  display:inline-block;
+  margin-top:5px;
+  padding:3px 7px;
+  border:1px solid #cbd9ef;
+  border-radius:5px;
+  background:#f5f8fd;
+  color:#315f9f;
+  text-decoration:none;
+  font-size:9px;
+  font-weight:800;
+}
+.mw-chart-btn:hover { background:#eaf2ff; border-color:#9db9e8; }
+.mw-signal.watch { background:#eef5ff; color:#285fa8; border:1px solid #d7e5fb; }
+.mw-signal.monitor { background:#fff7e6; color:#8a6500; border:1px solid #f2dfac; }
+.mw-signal.neutral { background:#f3f5f8; color:#6f7b8b; }
+@media(max-width:850px){
+  .mw-chart-btn{font-size:9px}
+}
+
+
+/* Full-page loading treatment */
+.mw-loading-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(15,27,51,.52);backdrop-filter:blur(4px)}
+.mw-loading-overlay.hidden{display:none}
+.mw-loading-card{width:min(520px,calc(100vw - 36px));padding:30px;border-radius:15px;background:#fff;box-shadow:0 22px 70px rgba(0,0,0,.30);text-align:center}
+.mw-loading-spinner{width:44px;height:44px;margin:0 auto 16px;border:5px solid #e4eaf3;border-top-color:#2f6fed;border-radius:50%;animation:mwspin .8s linear infinite}
+.mw-loading-title{font-size:18px;font-weight:900;color:#172033}
+.mw-loading-subtitle{margin-top:8px;font-size:12px;line-height:1.55;color:#687587}
+.mw-loading-warning{margin-top:16px;padding:10px;border-radius:8px;background:#fff3d6;color:#815b00;font-size:11px;font-weight:800}
+@keyframes mwspin{to{transform:rotate(360deg)}}
+.mw-fund-card{border-top:3px solid #172033!important}
+.mw-fund-card:last-child{border-top-color:#315f9f!important}
+
+
+/* v1.8.6 Momentum Watch polish */
+.mw-cards{align-items:stretch}
+.mw-fund-card{min-height:180px;border-radius:12px;border-top-width:3px!important}
+.mw-fund-card h3{color:#172033;font-size:16px}
+.status{background:#fff;border:1px solid #dfe5ee;border-radius:9px;padding:9px 12px;margin:10px 0 8px;box-shadow:0 4px 14px rgba(15,27,51,.04)}
+.table-wrap{border-radius:12px;overflow:auto}
+.table-wrap table{min-width:1180px}
+.table-wrap thead th{background:#f2f5f9;color:#536277}
+.table-wrap tbody tr{transition:background .12s ease}
+.table-wrap td{vertical-align:middle}
+.category-pill{background:#eef2f7;color:#4e6179;border:1px solid #e0e6ee;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:800}
+.flow-up{color:#16824e;font-weight:800}.flow-down{color:#c33a3a;font-weight:800}.flow-flat{color:#7a8798;font-weight:700}
+.mw-chart-btn{box-shadow:0 1px 2px rgba(20,40,80,.05)}
+.info-panel{border-radius:12px}
+.errors{border-radius:12px}
+@media(max-width:850px){
+  .hero{position:sticky !important;top:0;padding:12px 14px !important}
+  thead th{top:102px}
+}
+
+
+/* v1.8.7 category presentation */
+.category-cell{white-space:nowrap}
+.category-cell .category-pill + .category-pill{margin-left:4px}
+.category-pill{display:inline-block}
+.mw-fund-card{position:relative}
+
+/* v1.8.13 - persistent stock-table header while page scrolling */
+.table-wrap{overflow:visible;position:relative}
+.table-wrap thead th{
+  position:sticky;
+  top:0;
+  z-index:40;
+  background:#e8edf5;
+  box-shadow:0 1px 0 rgba(31,48,78,.12),0 3px 8px rgba(15,27,51,.08);
+}
+.table-wrap thead th:first-child{border-top-left-radius:10px}
+.table-wrap thead th:last-child{border-top-right-radius:10px}
+
+/* v1.8.14 - top 10 universe and clearer risk note */
+.mw-disclaimer{margin:10px 0 12px;padding:10px 13px;border:1px solid #d9e1ed;border-left:3px solid #172033;border-radius:9px;background:#f7f9fc;color:#58677b;font-size:10px;line-height:1.55}
+.mw-disclaimer strong{color:#172033}
+.flow-new{color:#315f9f;font-weight:800}.flow-exit{color:#9b4d00;font-weight:800}
+.mw-disclaimer{font-size:10.5px}
+.mw-status-date{font-weight:800}
+
+/* v1.8.16 - transparent fund-by-fund allocation details */
+.mw-details-btn{
+  display:block;margin-top:5px;padding:3px 7px;border:1px solid #cbd9ef;border-radius:5px;
+  background:#f7f9fd;color:#315f9f;font-size:9px;font-weight:800;cursor:pointer;
+}
+.mw-details-btn:hover{background:#eaf2ff;border-color:#9db9e8}
+.mw-details-row>td{padding:0!important;background:#f7f9fc!important;border-top:0!important}
+.mw-details-panel{margin:0 12px 10px;border:1px solid #dce4ef;border-radius:9px;background:#fff;overflow:hidden;box-shadow:0 3px 12px rgba(15,27,51,.05)}
+.mw-details-heading{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;background:#eef3f9;color:#263a57;font-size:10px}
+.mw-details-heading span{color:#718096;font-weight:700}
+.mw-fund-detail-row{display:grid;grid-template-columns:minmax(240px,1fr) 150px 110px;gap:10px;align-items:center;padding:7px 12px;border-top:1px solid #edf1f5;font-size:10px;color:#4b5b70}
+.mw-detail-fund{font-weight:800;color:#294568}
+.mw-detail-muted{grid-column:2/4;color:#9aa5b4;font-style:italic}
+@media(max-width:850px){
+  .mw-fund-detail-row{grid-template-columns:1fr;gap:3px}
+  .mw-detail-muted{grid-column:auto}
+}
+
+.mw-sma{display:block;color:#294568}.mw-sma-note{display:block;margin-top:3px;color:#8793a3;font-size:9px;white-space:normal;line-height:1.35}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Market Breadth</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/breadth.css">
+<link rel="stylesheet" href="/page-loading.css">
+</head>
+<body>
+
+<div id="breadthLoadingOverlay" class="loading-overlay hidden" aria-live="polite">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <div class="loading-title">Loading market breadth…</div>
+    <div class="loading-subtitle">Downloading constituent price history and calculating RS55 / SMA20 / SMA50 / SMA100 / SMA200.</div>
+    <div class="loading-warning">Please wait. Do not use the old table until loading finishes.</div>
+  </div>
+</div>
+
+<main class="container">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">MARKET BREADTH</div>
+      <h1 id="pageTitle">Nifty 50 Breadth</h1>
+      <p>Count of constituents above momentum / moving-average thresholds</p>
+    </div>
+    <nav class="main-nav">
+      <a href="/">Mutual Funds</a>
+      <a class="active" href="/breadth">Market Breadth</a><a href="/momentum-watch">Momentum Watch</a><a href="/sector-strength">Sector Strength</a><a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+      <a href="/patterns">Chart Patterns</a>
+      <a href="/stock">Stocks</a>
+    </nav>
+    <div class="hero-actions">
+      <div id="breadthDate" class="data-age">Loading...</div>
+      <button id="breadthRefresh">↻ Refresh</button>
+    </div>
+  </header>
+
+  <section class="panel breadth-controls">
+    <label>Index
+      <select id="indexSelect"></select>
+    </label>
+    <label>Display
+      <select id="displayMode">
+        <option value="count" selected>Count</option>
+        <option value="percent">Percentage</option>
+      </select>
+    </label>
+    <div class="breadth-definition">
+      <strong>RS55:</strong> stock 55-trading-day return minus benchmark 55-trading-day return.
+      <strong>RS55 &gt; 0</strong> means outperformance.
+    </div>
+  </section>
+
+  <section id="breadthStatus" class="status">Loading breadth...</section>
+
+  <section class="breadth-table-wrap">
+    <table id="breadthTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>RS55 &gt; 0</th>
+          <th>Above SMA20</th>
+          <th>Above SMA50</th>
+          <th>Above SMA100</th>
+          <th>Above SMA200</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="info-panel">
+    <div class="info-icon">i</div>
+    <div>
+      <strong>How to read breadth</strong>
+      <p>
+        Higher percentages indicate broader participation. When breadth expands,
+        more constituents are participating in the move. SMA breadth is the percentage
+        of constituents trading above the selected moving average. RS55 measures
+        55-trading-day relative outperformance versus the index benchmark.
+      </p>
+      <p>
+        The page shows the last 30 available trading sessions using the current constituent list. The data is a
+        screening/market-health indicator, not an investment recommendation.
+      </p>
+    </div>
+  </section>
+
+  <section id="breadthErrors" class="errors hidden">
+    <h3>Price data issues</h3>
+    <div id="breadthErrorList"></div>
+  </section>
+
+  <footer>
+    <span>Price data: Yahoo Finance · Constituents: NSE API / Nifty 50 fallback</span>
+    <span id="breadthUpdated"></span>
+  </footer>
+</main>
+<script src="/page-loading.js"></script>
+<script src="/breadth.js"></script>
+</body>
+</html>

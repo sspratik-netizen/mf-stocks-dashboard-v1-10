@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nifty 500 Chart Patterns</title>
+<link rel="stylesheet" href="/patterns.css">
+<link rel="stylesheet" href="/page-loading.css">
+</head>
+<body>
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-card">
+    <div class="spinner"></div>
+    <h2>Scanning Nifty 500 chart patterns…</h2>
+    <p>Downloading approximately 1 year of daily price history and checking 500 stocks for chart-pattern candidates.</p>
+    <div class="warning">Please wait. Results are not final until this message disappears.</div>
+  </div>
+</div>
+
+<main class="container">
+<header class="hero">
+  <div>
+    <div class="eyebrow">TECHNICAL SCANNER</div>
+    <h1>Nifty 500 Chart Patterns</h1>
+    <p>1-year daily timeframe · algorithmic pattern screening</p>
+  </div>
+  <nav class="main-nav">
+    <a href="/">Mutual Funds</a>
+    <a href="/breadth">Market Breadth</a><a href="/momentum-watch">Momentum Watch</a><a href="/sector-strength">Sector Strength</a><a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+    
+    <a class="active" href="/patterns">Chart Patterns</a><a href="/stock">Stocks</a>
+  </nav>
+  <div class="actions"><span id="updated">Loading…</span><button id="refresh">↻ Scan again</button></div>
+</header>
+
+<section class="tabs">
+  <button class="tab active" data-scope="recent">Recent</button>
+  <button class="tab" data-scope="past">Past</button>
+</section>
+
+<section class="pattern-cards" id="patternCards"></section>
+
+<section class="toolbar">
+  <input id="search" type="search" placeholder="Search stock or company…">
+  <select id="patternType"><option value="ALL">All patterns</option></select>
+  <select id="direction">
+    <option value="ALL">Bullish + Bearish</option>
+    <option value="Bullish">Bullish only</option>
+    <option value="Bearish">Bearish only</option>
+    <option value="Neutral">Neutral</option>
+  </select>
+  <select id="confidence">
+    <option value="0">Any confidence</option>
+    <option value="70">70%+</option>
+    <option value="80">80%+</option>
+    <option value="90">90%+</option>
+  </select>
+</section>
+
+<div id="status" class="status">Scanning…</div>
+
+<section class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Stock</th><th>Pattern</th><th>Direction</th><th>Pattern Preview</th><th>Pattern Date</th><th>Confidence</th><th>Current Price</th><th>1Y Return</th><th>Trigger / Note</th><th>Chart</th>
+</tr>
+</thead>
+<tbody id="patternTable"></tbody>
+</table>
+</section>
+
+<section class="info">
+<strong>How this scanner works</strong>
+<p><b>Universe:</b> current Nifty 500 constituents. NSE describes Nifty 500 as the top 500 companies by full market capitalisation and provides the constituent list.</p>
+<p><b>Timeframe:</b> approximately one year of daily price history. <b>Recent</b> means the detected formation ended within the last 30 trading sessions; <b>Past</b> means an older detected formation within the one-year scan window.</p>
+<p><b>Patterns:</b> Triangle, Head & Shoulders, Wedges, Flags, Channels, Double Top/Bottom and Rounding Top/Bottom. The scanner uses objective price/shape heuristics; it is a <b>screening tool</b>, not a guarantee that a human technical analyst would label every formation exactly the same way.</p>
+<p><b>Important:</b> A pattern is a candidate for further review. Always check volume, breakout/breakdown confirmation, support/resistance and the actual chart before making an investment decision.</p>
+</section>
+<footer>Data: NSE Nifty 500 constituent list + Yahoo Finance daily price history. <span id="updatedBottom"></span></footer>
+</main>
+
+<div id="chartModal" class="chart-modal hidden" aria-hidden="true">
+  <div class="chart-backdrop" id="chartBackdrop"></div>
+  <section class="chart-dialog" role="dialog" aria-modal="true" aria-labelledby="chartTitle">
+    <header class="chart-dialog-head">
+      <div>
+        <div class="eyebrow">PATTERN VIEW</div>
+        <h2 id="chartTitle">Stock chart</h2>
+        <p id="chartSubtitle"></p>
+      </div>
+      <button id="closeChart" class="close-chart" type="button" aria-label="Close chart">×</button>
+    </header>
+    <div class="chart-meta" id="chartMeta"></div>
+    <div class="chart-legend">
+      <span><i class="legend-price"></i> Price</span>
+      <span><i class="legend-pattern"></i> Pattern guide</span>
+      <span><i class="legend-trigger"></i> Trigger / neckline</span>
+    </div>
+    <div class="chart-canvas-wrap" id="chartCanvasWrap">
+      <div class="chart-loading">Loading chart…</div>
+    </div>
+    <div class="chart-note" id="chartNote"></div>
+    <footer class="chart-footer">1-year daily history · highlighted guide lines are algorithmic pattern guides, not guaranteed support/resistance.</footer>
+  </section>
+</div>
+
+<script src="/patterns.js"></script>
+<script src="/page-loading.js"></script></body>
+</html>

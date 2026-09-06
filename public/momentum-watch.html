@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentum Stock Watch</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/momentum-watch.css">
+<link rel="stylesheet" href="/page-loading.css">
+</head>
+<body>
+<div id="mwLoadingOverlay" class="mw-loading-overlay hidden" aria-live="polite">
+  <div class="mw-loading-card">
+    <div class="mw-loading-spinner"></div>
+    <div class="mw-loading-title">Loading Momentum Stock Watch…</div>
+    <div class="mw-loading-subtitle">Loading the top 10 Small Cap + top 10 Mid Cap funds, reading monthly holdings and calculating allocation, correction and SMA signals.</div>
+    <div class="mw-loading-warning">Please wait. Do not use the old table until loading finishes.</div>
+  </div>
+</div>
+
+<main class="container">
+<header class="hero">
+  <div>
+    <div class="eyebrow">FUND MANAGER SIGNAL</div>
+    <h1>Momentum Stock Watch</h1>
+    <p>Stocks appearing across the selected top 10 Small Cap or top 10 Mid Cap funds</p>
+  </div>
+  <nav class="main-nav">
+    <a href="/">Mutual Funds</a>
+    <a href="/breadth">Market Breadth</a>
+    <a class="active" href="/momentum-watch">Momentum Watch</a>
+    <a href="/sector-strength">Sector Strength</a>
+    <a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+    <a href="/patterns">Chart Patterns</a>
+    <a href="/stock">Stocks</a>
+  </nav>
+  <div class="hero-actions"><div id="mwUpdated" class="data-age">Loading...</div><button id="mwRefresh">↻ Refresh</button></div>
+</header>
+
+<section class="panel">
+  <div class="mw-toolbar">
+    <label>Category
+      <select id="mwCategory">
+        <option value="Small Cap">Small Cap</option>
+        <option value="Mid Cap">Mid Cap</option>
+      </select>
+    </label>
+    <label>Minimum funds holding
+      <select id="mwMinFunds">
+        <option value="2" selected>2+</option>
+        <option value="3">3+</option>
+        <option value="4">4+</option>
+        <option value="5">5+</option>
+        <option value="6">6+</option>
+        <option value="7">7+</option>
+        <option value="8">8+</option>
+        <option value="9">9+</option>
+        <option value="10">10</option>
+      </select>
+    </label>
+    <label>Search
+      <input id="mwSearch" type="search" placeholder="Stock / company">
+    </label>
+    <label>Allocation trend
+      <select id="mwTrend">
+        <option value="ALL">All</option>
+        <option value="UP">Increasing</option>
+        <option value="DOWN">Decreasing</option>
+        <option value="FLAT">No change</option>
+      </select>
+    </label>
+    <label>Sort by
+      <select id="mwSort">
+        <option value="funds-desc">Funds: high → low</option>
+        <option value="funds-asc">Funds: low → high</option>
+        <option value="avg-desc">Avg allocation: high → low</option>
+        <option value="avg-asc">Avg allocation: low → high</option>
+        <option value="delta-desc">Δ allocation: high → low</option>
+        <option value="delta-asc">Δ allocation: low → high</option>
+        <option value="correction-asc">Correction: most corrected</option>
+        <option value="correction-desc">Correction: least corrected</option>
+      </select>
+    </label>
+  </div>
+</section>
+
+<section class="mw-cards" id="mwFundCards"></section>
+
+<section class="status" id="mwStatus">Loading...</section>
+
+<section class="mw-disclaimer"><strong>Deep-correction reminder:</strong> a 50% fall requires a 100% gain just to return to the previous high. A 2025 Morgan Stanley/Counterpoint Global study of 6,500+ U.S. stocks found that about 54% never returned to their prior peak after their maximum drawdown; for stocks with a 50–55% maximum drawdown, about 77% eventually regained the prior peak. This is U.S. historical research, not a rule for Indian small/mid caps, so use 50% as a risk flag rather than assuming “half never recover.”</section>
+
+<section class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Stock</th><th>Category</th><th>Funds</th><th>Avg Allocation</th>
+<th>Δ Allocation</th><th>Fund Flow</th><th>Correction</th><th>SMA Up <span class="th-sub">20 / 50 / 100 / 200</span></th><th>Status</th>
+</tr>
+</thead>
+<tbody id="mwTable"></tbody>
+</table>
+</section>
+
+<section class="info-panel">
+<div class="info-icon">i</div><div>
+<strong>How Momentum Stock Watch works</strong>
+<p><b>Fund universe:</b> the dashboard selects the top 10 funds for the selected category using the existing category performance ranking. Small Cap and Mid Cap are calculated independently. Only stocks held by at least 2 selected funds are eligible for the consensus list.</p>
+<p><b>Avg Allocation:</b> average current portfolio weight among the selected funds that hold the stock. Funds that do not hold the stock are not included.</p>
+<p><b>Δ Allocation:</b> average fund-level allocation change versus the previous month, including funds that exited the stock (their current allocation is treated as 0%). The Fund Flow column shows every tracked fund outcome: increased ↑, decreased ↓, unchanged →, new, or sold/exited.</p>
+<p><b>Correction:</b> stock decline from its highest closing price over the preceding ~63 trading days. <b>SMA Up</b> shows the shortest moving average currently above price; longer averages are implied (20 / 50 / 100 / 200).</p><p><b>Holdings date:</b> the status line shows the latest portfolio disclosure date used for the allocation comparison when the source publishes a date.</p>
+<p><b>Watch:</b> a screening flag when a stock has a meaningful recent correction and at least one tracked fund is increasing allocation. This is a watchlist signal, not a buy recommendation.</p>
+</div>
+</section>
+
+<section class="errors hidden" id="mwErrors">
+<h3>Holdings data status</h3><div id="mwErrorList"></div>
+</section>
+
+<footer><span>Portfolio holdings require a monthly holdings provider/AMC disclosure feed.</span><span>Development feature</span></footer>
+</main>
+<script src="/page-loading.js"></script>
+<script src="/momentum-watch.js"></script>
+</body>
+</html>

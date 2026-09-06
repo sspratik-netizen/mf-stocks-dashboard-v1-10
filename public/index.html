@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mutual Fund Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/page-loading.css">
+</head>
+<body>
+  <main class="container">
+
+    <header class="hero">
+      <div>
+        <div class="eyebrow">INVESTMENT MONITOR</div>
+        <h1>Mutual Fund Dashboard</h1>
+        <p>Direct Plan · Growth · 5 funds per category</p>
+      </div>
+      <nav class="main-nav"><a class="active" href="/">Mutual Funds</a><a href="/breadth">Market Breadth</a><a href="/momentum-watch">Momentum Watch</a><a href="/sector-strength">Sector Strength</a><a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+    <a href="/patterns">Chart Patterns</a><a href="/stock">Stocks</a></nav><div class="hero-actions">
+        <div id="dataAge" class="data-age">Checking data...</div>
+        <button id="refreshBtn">↻ Refresh</button>
+      </div>
+    </header>
+
+    <section class="summary">
+      <div class="card">
+        <span>Total Funds</span>
+        <strong id="totalFunds">-</strong>
+        <small>70 configured schemes</small>
+      </div>
+      <div class="card">
+        <span>30D Positive</span>
+        <strong id="positive30d">-</strong>
+        <small>Funds above 0%</small>
+      </div>
+      <div class="card">
+        <span>Weekly Alerts</span>
+        <strong id="weeklyAlerts">-</strong>
+        <small>7D ≤ -5%</small>
+      </div>
+      <div class="card">
+        <span>Monthly Alerts</span>
+        <strong id="monthlyAlerts">-</strong>
+        <small>30D ≤ -10%</small>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span>⌕</span>
+          <input id="search" type="search" placeholder="Search fund...">
+        </div>
+
+        <select id="category">
+          <option value="ALL">All categories</option>
+        </select>
+
+        <select id="sort">
+          <option value="name-asc">Fund Name A → Z</option><option value="name-desc">Fund Name Z → A</option><option value="7-desc">7D Highest → Lowest</option><option value="7-asc">7D Lowest → Highest</option><option value="30-desc">30D Highest → Lowest</option><option value="30-asc">30D Lowest → Highest</option><option value="180-desc">180D Highest → Lowest</option><option value="180-asc">180D Lowest → Highest</option><option value="360-desc">360D Highest → Lowest</option><option value="360-asc">360D Lowest → Highest</option>
+        </select>
+
+        <label class="alert-filter">
+          <input id="alertsOnly" type="checkbox">
+          Alerts only
+        </label>
+      </div>
+
+      <div class="legend">
+        <span><b class="dot green"></b> Positive</span>
+        <span><b class="dot red"></b> Negative</span>
+        <span><b class="badge weekly">W</b> 7D ≤ -5%</span>
+        <span><b class="badge monthly">M</b> 30D ≤ -10%</span>
+      </div>
+    </section>
+
+    <div id="status" class="status">Loading...</div>
+
+    <section class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fund</th>
+            <th>Category</th>
+            <th>NAV / Date</th>
+            <th>7D</th>
+            <th>30D</th>
+            <th>180D</th>
+            <th>360D</th>
+            <th>Rank</th><th>Signal</th><th>Alert</th>
+          </tr>
+        </thead>
+        <tbody id="fundTable"></tbody>
+      </table>
+    </section>
+
+    <section id="calculationInfo" class="info-panel">
+      <div class="info-icon">i</div>
+      <div>
+        <strong>Return & signal calculation</strong>
+        <p>
+          7D, 30D, 180D and 360D are calendar-day periods.
+          For each target date, the dashboard uses the latest available NAV
+          on or before that date. The reference date is shown below each return. Signal is a screening heuristic based on correction, 180D/360D trend and category rank; it is not a valuation or guaranteed buy recommendation.
+        </p>
+      </div>
+    </section>
+
+    <section id="errors" class="errors hidden">
+      <h3>Funds with errors</h3>
+      <div id="errorList"></div>
+    </section>
+
+    <footer>
+      <span>Data source: MFAPI / AMFI</span>
+      <span id="updatedAt"></span>
+    </footer>
+
+  
+<section class="info-panel signal-guide">
+  <div class="info-icon">?</div>
+  <div>
+    <strong>Why a fund is labelled Momentum, Attractive, Watch or Strong Accumulation</strong>
+    <p><b>Momentum:</b> 30D &gt; 0%, 180D &gt; 5%, 360D &gt; 10% and the fund ranks in the top 2 of its category based on longer-term performance.</p>
+    <p><b>Attractive:</b> 30D ≤ -5%, while 180D and 360D remain positive and the fund ranks in the top 2. This identifies a strong fund undergoing a meaningful correction; it does <b>not</b> mean the fund is undervalued.</p>
+    <p><b>Strong Accumulation:</b> 30D ≤ -8%, 180D &gt; 5%, 360D &gt; 10% and category rank ≤ 2. This is a stronger correction-with-trend signal.</p>
+    <p><b>Watch:</b> 30D ≤ -3% with positive 180D and 360D returns. It needs further confirmation.</p>
+    <p><b>Neutral:</b> none of the above conditions is satisfied.</p>
+    <p><b>Important:</b> These are systematic screening signals based on returns and category ranking, not guaranteed buy recommendations, valuation calls or personalized investment advice.</p>
+  </div>
+</section>
+
+</main>
+
+  <script src="/page-loading.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

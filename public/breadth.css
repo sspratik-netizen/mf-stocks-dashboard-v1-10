@@ -1,0 +1,162 @@
+.breadth-controls {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.breadth-controls label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #657183;
+  font-size: 11px;
+  font-weight: 700;
+}
+.breadth-definition {
+  margin-left: auto;
+  color: #778293;
+  font-size: 10px;
+}
+.breadth-table-wrap {
+  background: #fff;
+  border: 1px solid #e4e8ee;
+  border-radius: 11px;
+  overflow: visible;
+  box-shadow: 0 2px 8px rgba(25, 38, 60, .035);
+}
+#breadthTable {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+}
+#breadthTable th,
+#breadthTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #edf0f4;
+  text-align: center;
+  white-space: nowrap;
+}
+#breadthTable th:first-child,
+#breadthTable td:first-child {
+  text-align: left;
+}
+#breadthTable th {
+  background: #fafbfc;
+  color: #738092;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.breadth-cell {
+  min-width: 110px;
+  font-weight: 800;
+  border-radius: 5px;
+}
+.breadth-cell small {
+  display: block;
+  margin-top: 2px;
+  color: #8e99a7;
+  font-size: 9px;
+  font-weight: 500;
+}
+.breadth-strong { background: #dff4e5; color: #08753f; }
+.breadth-good { background: #eaf7df; color: #4c7f16; }
+.breadth-mid { background: #fff5c9; color: #8a6d00; }
+.breadth-weak { background: #ffe5d9; color: #a44a22; }
+.breadth-bad { background: #ffe0e4; color: #b62945; }
+.breadth-date {
+  font-weight: 700;
+  color: #465264;
+  font-size: 11px;
+}
+@media (max-width: 900px) {
+  .breadth-definition { margin-left: 0; width: 100%; }
+}
+
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 25, 42, .48);
+  backdrop-filter: blur(3px);
+}
+.loading-overlay.hidden { display: none; }
+.loading-card {
+  width: min(520px, calc(100vw - 36px));
+  padding: 28px 30px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 60px rgba(0,0,0,.25);
+  text-align: center;
+}
+.loading-spinner {
+  width: 42px;
+  height: 42px;
+  margin: 0 auto 16px;
+  border: 5px solid #e5eaf1;
+  border-top-color: #1e5fd1;
+  border-radius: 50%;
+  animation: breadth-spin .85s linear infinite;
+}
+.loading-title { font-size: 18px; font-weight: 900; color: #172033; }
+.loading-subtitle { margin-top: 8px; font-size: 12px; line-height: 1.5; color: #687587; }
+.loading-warning {
+  margin-top: 15px;
+  padding: 9px;
+  border-radius: 7px;
+  background: #fff4d7;
+  color: #875d00;
+  font-size: 11px;
+  font-weight: 800;
+}
+.loading-row { padding: 28px !important; color: #657183; font-weight: 800; }
+@keyframes breadth-spin { to { transform: rotate(360deg); } }
+
+.latest-hover { position: relative; cursor: help; }
+.breadth-tooltip {
+  display: none;
+  position: fixed;
+  z-index: 10050;
+  width: 440px;
+  max-height: 520px;
+  overflow: auto;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #172033;
+  color: #fff;
+  box-shadow: 0 14px 35px rgba(0,0,0,.28);
+  text-align: left;
+  white-space: normal;
+  font-size: 11px;
+  font-weight: 500;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.latest-hover:hover .breadth-tooltip,
+.breadth-tooltip.show { display: block; }
+.breadth-tooltip.pinned { cursor: text; }
+.tooltip-help { color:#9eacc0; font-size:10px; margin:6px 0 8px; }
+.breadth-name { user-select:text; cursor:text; }
+.breadth-tooltip .tooltip-title { font-size: 13px; font-weight: 900; margin-bottom: 3px; }
+.tooltip-count { color: #b9c5d6; margin-bottom: 9px; }
+.tooltip-section { border-top: 1px solid rgba(255,255,255,.12); padding-top: 7px; margin-top: 7px; }
+.tooltip-section > strong { display:block; margin-bottom:4px; }
+.breadth-name { line-height: 1.35; margin: 3px 0; }
+.breadth-name span { color: #c3ccda; }
+.breadth-none { color: #9da8b8; }
+.breadth-audit-row { margin: 5px 0 7px; line-height: 1.35; }
+.breadth-audit-row > div:first-child { white-space: normal; }
+.breadth-audit-row span { color:#c3ccda; }
+.audit-values { color:#d9e1ec; font-size:10px; margin-top:2px; white-space:normal; }
+.breadth-tooltip { max-width: min(620px, calc(100vw - 16px)); }
+
+/* v1.8.6 shared professional finish */
+.breadth-controls,.breadth-table-wrap,.info-panel,.errors{box-shadow:0 8px 24px rgba(15,27,51,.055)}
+#breadthTable thead th{background:#edf2f8;color:#506078;font-weight:900}
+#breadthTable tbody tr{transition:background .12s ease}
+#breadthTable tbody tr:hover{background:#f4f8fd}

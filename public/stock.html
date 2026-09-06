@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Stock Detail</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/stock.css"><link rel="stylesheet" href="/page-loading.css">
+</head><body>
+<header class="topbar"><div class="brand">Market Analytics</div><nav><a href="/">Mutual Funds</a><a href="/breadth">Market Breadth</a><a href="/momentum-watch">Momentum Watch</a><a href="/sector-strength">Sector Strength</a><a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+    <a href="/patterns">Chart Patterns</a><a class="active" href="/stock">Stocks</a></nav></header>
+<main class="stock-page">
+<section class="stock-head">
+  <div>
+    <small>NSE EQUITY · STOCK DETAIL</small>
+    <h1 id="name">Loading…</h1>
+    <p id="company">Loading company…</p>
+    <p id="meta">Loading data…</p>
+  </div>
+  <div class="stock-search">
+    <label for="symbol">Search stock</label>
+    <div class="search-row"><input id="symbol" autocomplete="off" placeholder="Search symbol or company, e.g. Reliance"><button id="go">View Stock</button></div>
+    <div id="suggestions" class="suggestions hidden"></div>
+  </div>
+</section>
+<section class="stats"><div><b>Price</b><strong id="price">—</strong></div><div><b>1M</b><strong id="r1">—</strong></div><div><b>3M</b><strong id="r3">—</strong></div><div><b>6M</b><strong id="r6">—</strong></div><div><b>1Y</b><strong id="r12">—</strong></div><div><b>3Y</b><strong id="r36">—</strong></div><div><b>5Y</b><strong id="r60">—</strong></div></section>
+<section class="panel"><div class="panel-title"><div><h2>Price Chart</h2><span id="chartInfo">Daily data · Maximum 5 years</span></div><div class="ranges"><button data-r="1m">1M</button><button data-r="3m">3M</button><button data-r="6m">6M</button><button data-r="1y">1Y</button><button data-r="3y">3Y</button><button data-r="5y">5Y</button></div></div><div class="chartbox"><canvas id="chart"></canvas><div id="loading">Loading chart…</div></div></section>
+<section class="lower"><section class="panel"><h2>Technical Snapshot</h2><div class="tech"><div>SMA20<strong id="s20">—</strong></div><div>SMA50<strong id="s50">—</strong></div><div>SMA200<strong id="s200">—</strong></div><div>52W High<strong id="hi">—</strong></div><div>52W Low<strong id="lo">—</strong></div><div>vs SMA200<strong id="vs">—</strong></div></div></section><section class="panel"><h2>Chart Patterns</h2><div id="patterns">No pattern data.</div></section></section>
+<div class="note"><b>Data:</b> EOD historical price series · <b>Universe:</b> Nifty 500 search directory where available · <b>Note:</b> Technical indicators and chart patterns are quantitative screening outputs, not investment advice.</div></main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script src="/page-loading.js"></script>
+<script src="/stock.js"></script></body></html>

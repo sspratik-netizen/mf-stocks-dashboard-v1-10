@@ -1,0 +1,98 @@
+/* v1.9.8 unified full-screen loading experience used on every page */
+.page-loading-overlay,
+.loading-overlay,
+.mw-loading-overlay,
+#breadthLoadingOverlay,
+#loadingOverlay{
+  position:fixed!important;
+  inset:0!important;
+  z-index:99999!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#304457!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transition:opacity .18s ease,visibility .18s ease!important;
+}
+.page-loading-overlay.hidden,
+.loading-overlay.hidden,
+.mw-loading-overlay.hidden,
+#breadthLoadingOverlay.hidden,
+#loadingOverlay.hidden{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  display:none!important;
+}
+.page-loading-card,
+.loading-card,
+.mw-loading-card{
+  width:min(680px,calc(100vw - 40px))!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  text-align:center!important;
+}
+.page-loading-spinner,
+.spinner,
+.loading-spinner,
+.mw-loading-spinner{display:none!important}
+.page-loading-card h2,
+.loading-card h2,
+.mw-loading-title,
+.loading-title{
+  margin:0 0 16px!important;
+  color:#59d8cb!important;
+  font-size:28px!important;
+  line-height:1.1!important;
+  font-weight:500!important;
+  letter-spacing:.01em!important;
+  text-transform:none!important;
+}
+.page-loading-card h2::first-letter{text-transform:lowercase}
+.page-loading-card p,
+.loading-card p,
+.mw-loading-subtitle,
+.loading-subtitle,
+.page-loading-note,
+.warning,
+.loading-warning,
+.mw-loading-warning{display:none!important}
+.page-loading-card::after,
+.loading-card::after,
+.mw-loading-card::after{
+  content:"";
+  display:block;
+  width:100%;
+  height:58px;
+  box-sizing:border-box;
+  border:3px solid #59d8cb;
+  border-radius:34px;
+  background:
+    linear-gradient(90deg,transparent 0%,rgba(89,216,203,.12) 15%,rgba(89,216,203,.7) 50%,rgba(89,216,203,.12) 85%,transparent 100%) center/60% 100% no-repeat,
+    repeating-linear-gradient(90deg,rgba(20,43,58,.34) 0 7px,transparent 7px 12px);
+  box-shadow:0 0 22px rgba(89,216,203,.16),inset 0 0 18px rgba(89,216,203,.08);
+  animation:marketLoadingSweep 1.45s ease-in-out infinite;
+}
+@keyframes marketLoadingSweep{
+  0%{background-position:-40% 0,0 0;filter:brightness(.9)}
+  50%{background-position:140% 0,0 0;filter:brightness(1.15)}
+  100%{background-position:140% 0,0 0;filter:brightness(.9)}
+}
+@media(max-width:600px){
+  .page-loading-card,.loading-card,.mw-loading-card{width:calc(100vw - 48px)!important}
+  .page-loading-card h2,.loading-card h2,.mw-loading-title,.loading-title{font-size:24px!important}
+  .page-loading-card::after,.loading-card::after,.mw-loading-card::after{height:50px;border-width:2px}
+}
+
+/* v1.10 unified full loading message */
+.page-loading-card{max-width:720px!important;width:min(720px,calc(100vw - 40px))!important}
+.page-loading-card h2{margin:0 0 12px!important}
+.page-loading-card .page-loading-subtitle{display:block!important;margin:0 0 22px!important;color:#d9f5f0!important;font-size:18px!important;line-height:1.35!important}
+.page-loading-card .page-loading-note{display:block!important;margin:18px auto 0!important;max-width:620px!important;color:#b7c8d5!important;font-size:13px!important;line-height:1.5!important}
+.page-loading-card::after{display:none!important}
+.page-loading-bar{display:block;width:100%;height:58px;box-sizing:border-box;border:3px solid #59d8cb;border-radius:34px;background:linear-gradient(90deg,transparent 0%,rgba(89,216,203,.12) 15%,rgba(89,216,203,.7) 50%,rgba(89,216,203,.12) 85%,transparent 100%) center/60% 100% no-repeat,repeating-linear-gradient(90deg,rgba(20,43,58,.34) 0 7px,transparent 7px 12px);box-shadow:0 0 22px rgba(89,216,203,.16),inset 0 0 18px rgba(89,216,203,.08);animation:marketLoadingSweep 1.45s ease-in-out infinite}
+@media(max-width:600px){.page-loading-card .page-loading-subtitle{font-size:16px!important}.page-loading-card .page-loading-note{font-size:12px!important}.page-loading-bar{height:50px;border-width:2px}}

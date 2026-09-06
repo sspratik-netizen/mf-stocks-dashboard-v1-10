@@ -1,0 +1,20 @@
+.strength,.radar-bucket{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid #d6dde8}.strength.strong{background:#eaf7ef;color:#17663a}.strength.improving{background:#edf4ff;color:#1e4f91}.strength.neutral{background:#fff8df;color:#856400}.strength.weak{background:#fff0f0;color:#a33}.radar-score{font-size:18px;color:#1e3a5f}.radar-bucket{background:#f3f6fb;color:#34465f}.summary .card strong{overflow-wrap:anywhere}.positive{color:#177245}.negative{color:#b13a32}@media(max-width:820px){.hero-actions button{flex:0 0 auto}.summary .card{min-height:96px}.summary .card strong{font-size:20px}.table-wrap table{min-width:1000px}}
+/* v1.9.2 usability */
+.sector-hover{position:relative;display:inline-block}.sector-name{padding:0;border:0;background:transparent;color:#1f3b63;font:inherit;font-weight:800;cursor:pointer}.sector-name:hover{text-decoration:underline}.sector-popover{display:none;position:absolute;left:0;top:calc(100% + 8px);z-index:200;width:min(620px,calc(100vw - 32px));padding:13px;border:1px solid #d7e0ec;border-radius:10px;background:#fff;box-shadow:0 16px 42px rgba(15,27,51,.18);text-align:left;white-space:normal}.sector-hover:hover .sector-popover,.sector-hover.open .sector-popover{display:block}.sector-popover-meta{margin:5px 0 10px;color:#718096;font-size:11px}.sector-popover-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sector-popover-grid section{max-height:250px;overflow:auto;padding:8px;border:1px solid #edf1f5;border-radius:8px;background:#fbfcfe}.sector-popover-grid section>div{padding:4px 0;border-bottom:1px solid #eef2f6;font-size:11px}.sector-popover-grid span{display:block;color:#7d8998;font-size:10px}.sma-signal{display:block;color:#294568}.sma-signal+small{display:block;margin-top:3px;color:#8a95a4;font-size:9px;white-space:normal}@media(max-width:820px){.sector-popover{position:fixed;left:12px!important;right:12px;width:auto;top:120px!important;max-height:70vh;overflow:auto}.sector-popover-grid{grid-template-columns:1fr}.table-wrap table{min-width:980px}}
+
+/* v1.9.3 local test: keep Opportunity Radar sector + status visible on desktop */
+.opportunity-table{table-layout:fixed;min-width:1120px;font-size:13px}
+.opportunity-table th,.opportunity-table td{padding:9px 7px;white-space:normal;line-height:1.25}
+.opportunity-table th:nth-child(1),.opportunity-table td:nth-child(1){width:18%;text-align:left}
+.opportunity-table th:nth-child(2),.opportunity-table td:nth-child(2){width:7%}
+.opportunity-table th:nth-child(3),.opportunity-table td:nth-child(3){width:5%}
+.opportunity-table th:nth-child(4),.opportunity-table td:nth-child(4){width:11%}
+.opportunity-table th:nth-child(5),.opportunity-table td:nth-child(5){width:9%}
+.opportunity-table th:nth-child(6),.opportunity-table td:nth-child(6){width:6%}
+.opportunity-table th:nth-child(7),.opportunity-table td:nth-child(7){width:8%}
+.opportunity-table th:nth-child(8),.opportunity-table td:nth-child(8){width:12%}
+.opportunity-table th:nth-child(9),.opportunity-table td:nth-child(9){width:15%;text-align:left}
+.opportunity-table th:nth-child(10),.opportunity-table td:nth-child(10){width:9%}
+.opportunity-table .sma-signal{font-size:12px}.radar-sector{font-size:12px;overflow-wrap:anywhere}
+.mw-coverage{display:block;margin:3px 0 6px;color:#748296;font-size:10px;font-weight:700}
+@media(min-width:901px){.opportunity-table{min-width:0;width:100%}.opportunity-table .fund-name small{font-size:10px}.opportunity-table .radar-bucket{font-size:10px;padding:4px 6px}}

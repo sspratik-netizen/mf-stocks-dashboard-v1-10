@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sector Analysis</title>
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/sectors.css">
+<link rel="stylesheet" href="/page-loading.css">
+</head>
+<body>
+<div id="sectorLoading" class="loading-overlay hidden" aria-live="polite">
+  <div class="loading-card">
+    <div class="loading-spinner"></div>
+    <div class="loading-title" id="loadingTitle">Loading sector data…</div>
+    <div class="loading-subtitle">Reading NSE corporate filings and calculating sector-level aggregates.</div>
+    <div class="loading-warning">Please wait until loading finishes. Do not read the old table while a refresh is running.</div>
+  </div>
+</div>
+<main class="container">
+<header class="hero">
+  <div>
+    <div class="eyebrow">FUNDAMENTAL MONITOR</div>
+    <h1>Sector Analysis</h1>
+    <p>Sector shareholding composition and financial-results trends</p>
+  </div>
+  <nav class="main-nav">
+    <a href="/">Mutual Funds</a>
+    <a href="/breadth">Market Breadth</a>
+    <a class="active" href="/sectors">Sector Analysis</a>
+    <a href="/sector-strength">Sector Strength</a>
+    <a href="/opportunity-radar">Opportunity Radar</a><a href="/ipo-market">IPO Market</a>
+    <a href="/patterns">Chart Patterns</a>
+    <a href="/stock">Stocks</a>
+  </nav>
+  <div class="hero-actions"><div id="sectorUpdated" class="data-age">Loading...</div><button id="sectorRefresh">↻ Refresh</button></div>
+</header>
+
+<section class="sector-tabs">
+  <button class="sector-tab active" data-page="shareholding">Shareholding</button>
+  <button class="sector-tab" data-page="results">Results</button>
+</section>
+
+<section id="shareholdingPage">
+  <section class="panel sector-controls">
+    <label>Sector <select id="shareSector"><option value="ALL">All sectors</option></select></label>
+    <label>Quarter <select id="shareQuarter"><option value="latest">Latest available</option></select></label>
+    <div class="control-note">Promoters, FIIs, DIIs and Others. Sectors are sorted by Promoter holding in descending order.</div>
+  </section>
+  <section id="shareStatus" class="status">Loading shareholding…</section>
+  <section class="sector-summary" id="shareSummary"></section>
+  <section class="sector-table-wrap">
+    <table class="sector-table">
+      <thead><tr><th>Sector</th><th>Stocks</th><th>Promoter %</th><th>FII %</th><th>DII %</th><th>Others %</th><th>Trend</th></tr></thead>
+      <tbody id="shareTable"></tbody>
+    </table>
+  </section>
+  <section class="trend-panel">
+    <div class="trend-head"><div><div class="eyebrow">10-QUARTER TREND</div><h2 id="shareTrendTitle">Shareholding trend</h2></div><div class="trend-legend"><span>Promoter</span><span>FII</span><span>DII</span><span>Others</span></div></div>
+    <div id="shareBars" class="bars"></div>
+  </section>
+  <section class="info-panel sector-info"><div class="info-icon">i</div><div><strong>How sector shareholding is calculated</strong><p>The page groups the current Nifty 500 universe by the industry/sector field supplied with the NSE constituent data. The sector percentages are the equal-weighted average of the available stock-level shareholding percentages for the selected quarter. A missing stakeholder value is not replaced with a guessed value.</p><p>Ten quarterly observations are shown when the underlying filings provide them. This is an analytical aggregation, not an official NSE sector index.</p></div></section>
+</section>
+
+<section id="resultsPage" class="hidden">
+  <section class="panel sector-controls results-controls">
+    <label>Sector <select id="resultSector"><option value="ALL">All sectors</option></select></label>
+    <label>Period <select id="resultPeriod"><option value="quarterly">Quarterly</option><option value="annual">Annual</option></select></label>
+    <label>View <select id="resultView"><option value="published">Stocks Published Results</option><option value="entire">Entire Sector</option></select></label>
+    <label>Sort <select id="resultSort"><option value="salesYoY">YoY Sales Growth</option><option value="ebitdaYoY">YoY EBITDA Growth</option><option value="patYoY">YoY PAT Growth</option><option value="sales">Sales</option><option value="pat">PAT</option></select></label>
+    <div class="control-note">Default order: decreasing YoY Sales Growth. Published Results uses stocks with a filing in the current reporting period.</div>
+  </section>
+  <section id="resultStatus" class="status">Loading sector results…</section>
+  <section class="sector-summary" id="resultSummary"></section>
+  <section class="result-chart-panel"><div class="trend-head"><div><div class="eyebrow">SECTOR RESULTS</div><h2 id="resultChartTitle">Sales / EBITDA / PAT</h2></div></div><div id="resultChart" class="result-chart"></div></section>
+  <section class="sector-table-wrap">
+    <table class="sector-table results-table">
+      <thead><tr><th>Sector / Period</th><th>Stocks</th><th>Sales</th><th>Sales YoY</th><th>EBITDA</th><th>EBITDA YoY</th><th>PAT</th><th>PAT YoY</th><th>Margins</th></tr></thead>
+      <tbody id="resultTable"></tbody>
+    </table>
+  </section>
+  <section class="info-panel sector-info"><div class="info-icon">i</div><div><strong>How sector results are calculated</strong><p>Stock-level NSE results are aggregated across the selected sector. Quarterly values are summed for the sector; YoY compares the same reporting period one year earlier. Annual values use completed fiscal-year quarters available from the underlying filings. EBITDA is calculated only when the required operating-profit, interest and depreciation fields are available; otherwise it is shown as unavailable rather than estimated.</p><p>Stocks Published Results is the default view and uses stocks that have reported in the current period. Entire Sector uses all stocks for which the corresponding period data is available.</p></div></section>
+</section>
+<footer><span>Corporate data: NSE India public corporate filings. Universe: current Nifty 500 constituent list.</span><span id="sectorFooterUpdated"></span></footer>
+</main>
+<script src="/page-loading.js"></script>
+<script src="/sectors.js"></script>
+</body>
+</html>
