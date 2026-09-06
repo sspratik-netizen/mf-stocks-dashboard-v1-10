@@ -1927,48 +1927,58 @@ function parsePortfolioAsOfDate(html) {
 }
 
 function parseMfiTopHoldings(html) {
-  const rows = [];
-  const trMatches = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
-  for (const tr of trMatches) {
-    const cells = [...tr.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)]
-      .map(m => stripHtml(m[1]).replace(/\s+/g, " ").trim());
-    if (cells.length < 3) continue;
+  const tables = String(html || "").match(/<table\b[^>]*>[\s\S]*?<\/table>/gi) || [];
 
-    const company = cells[0];
-    const sector = cells[1];
-    const pctCell = cells.find(x => /\d+(?:\.\d+)?\s*%/.test(x));
-    if (!pctCell) continue;
-    if (!company || /^(company name|security|scheme|fund name|total)$/i.test(company)) continue;
-    if (/^(sector name|industry|asset class)$/i.test(sector)) continue;
-
-    // MFI factsheets have Company Name | Sector Name | Asset %. Avoid
-    // accidentally treating sector-allocation tables as stock holdings.
-    if (/financial services|healthcare|capital goods|current assets|realty|chemicals|textiles|technology/i.test(company) &&
-        !/ltd|limited|bank|inc|corp|industries|pharma|motors|systems|services|foods|power|finance|engineering/i.test(company)) {
+  for (const table of tables) {
+    const tableText = stripHtml(table).replace(/\s+/g, " ").trim();
+    // Only parse an actual Top Holdings table. This prevents labels such as
+    // "Reduced", "Increased" and "New" from unrelated dashboard tables from
+    // being mistaken for stock names.
+    if (!/company\s*name|security|stock/i.test(tableText) ||
+        !/(asset\s*%|%\s*asset|%\s*to\s*nav|weight)/i.test(tableText)) {
       continue;
     }
 
-    const allocation = parsePct(pctCell);
-    if (!Number.isFinite(allocation) || allocation <= 0) continue;
-    if (/cash|treps|repo|receivable|payable|net current|treasury bill|accrued interest/i.test(company)) continue;
+    const rows = [];
+    const trMatches = table.match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+    for (const tr of trMatches) {
+      const cells = [...tr.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)]
+        .map(m => stripHtml(m[1]).replace(/\s+/g, " ").trim());
+      if (cells.length < 2) continue;
 
-    rows.push({
-      company,
-      isin: null,
-      allocation,
-      previousAllocation: null,
-      deltaAllocation: null,
-      changeType: null,
-      asOf: null,
-      previousAsOf: null
-    });
+      const company = cells[0];
+      if (!company || /^(company name|security|stock|scheme|fund name|total)$/i.test(company)) continue;
+
+      // MFI uses input controls for Asset %, so the visible percentage can be
+      // either in a cell or in an input value.
+      const pctCell = cells.find(x => /\d+(?:\.\d+)?\s*%/.test(x));
+      const inputPct = [...tr.matchAll(/(?:value|data-value)\s*=\s*["']?([0-9]+(?:\.[0-9]+)?)["']?/gi)]
+        .map(m => Number(m[1])).find(Number.isFinite);
+      const allocation = pctCell ? parsePct(pctCell) : inputPct;
+      if (!Number.isFinite(allocation) || allocation <= 0 || allocation > 100) continue;
+      if (/cash|treps|triparty repo|repo|receivable|payable|net current|treasury bill|accrued interest/i.test(company)) continue;
+
+      rows.push({
+        company,
+        isin: null,
+        allocation,
+        previousAllocation: null,
+        deltaAllocation: null,
+        changeType: null,
+        asOf: null,
+        previousAsOf: null
+      });
+    }
+    if (rows.length >= 3) return rows;
   }
-  return rows;
+  return [];
 }
 
-function parseHoldingRowsFromHtml(html) {
-  const mfiRows = parseMfiTopHoldings(html);
-  if (mfiRows.length >= 5) return mfiRows;
+function parseHoldingRowsFromHtml(html, sourceUrl = "") {
+  if (/mfiframes\.mutualfundsindia\.com/i.test(sourceUrl)) {
+    const mfiRows = parseMfiTopHoldings(html);
+    if (mfiRows.length >= 3) return mfiRows;
+  }
 
   const rows = [];
   const portfolioAsOf = parsePortfolioAsOfDate(html);
@@ -2148,7 +2158,7 @@ async function fetchMomentumFundHoldings(fund, forceRefresh=false) {
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const html = await response.text();
-        const rows = parseHoldingRowsFromHtml(html);
+        const rows = parseHoldingRowsFromHtml(html, url);
         if (!rows.length) throw new Error("No equity holdings could be parsed from source");
 
         const value = {
