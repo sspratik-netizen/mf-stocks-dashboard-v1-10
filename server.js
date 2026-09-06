@@ -1984,6 +1984,93 @@ function parseHoldingRowsFromHtml(html) {
   return rows;
 }
 
+const MFDATA_BASE = "https://mfdata.in/api/v1";
+const mfDataFamilyCache = new Map();
+
+async function fetchMfDataJson(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "MF-Stocks-Dashboard/1.10.2",
+        "Accept": "application/json"
+      }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchMfDataHoldings(fundName) {
+  let familyId = mfDataFamilyCache.get(fundName);
+  let familyName = null;
+
+  if (!familyId) {
+    const search = await fetchMfDataJson(`${MFDATA_BASE}/search?q=${encodeURIComponent(fundName)}`);
+    const matches = Array.isArray(search?.data) ? search.data : [];
+    if (!matches.length) throw new Error("MFData search returned no matching scheme");
+
+    const norm = x => normalize(String(x || "")).replace(/smallcap/g, "small cap").trim();
+    const wanted = norm(fundName);
+    matches.sort((a,b) => {
+      const an = norm(a.scheme_name || a.name);
+      const bn = norm(b.scheme_name || b.name);
+      const as = an === wanted ? 10000 : tokenScore(fundName, a.scheme_name || a.name);
+      const bs = bn === wanted ? 10000 : tokenScore(fundName, b.scheme_name || b.name);
+      return bs - as;
+    });
+
+    let lastError = null;
+    for (const match of matches.slice(0, 5)) {
+      const code = match?.scheme_code ?? match?.amfi_code;
+      if (!code) continue;
+      try {
+        const detail = await fetchMfDataJson(`${MFDATA_BASE}/schemes/${encodeURIComponent(code)}`);
+        familyId = detail?.data?.family_id;
+        familyName = detail?.data?.family_name || detail?.data?.scheme_name || match?.scheme_name || null;
+        if (familyId) {
+          mfDataFamilyCache.set(fundName, familyId);
+          break;
+        }
+      } catch (e) { lastError = e; }
+    }
+    if (!familyId) throw new Error(`MFData family lookup failed${lastError ? ": " + lastError.message : ""}`);
+  }
+
+  const payload = await fetchMfDataJson(`${MFDATA_BASE}/families/${encodeURIComponent(familyId)}/holdings`);
+  const data = payload?.data || {};
+  const equity = Array.isArray(data.equity_holdings) ? data.equity_holdings
+    : Array.isArray(data.equity) ? data.equity : [];
+
+  const rows = equity.map(x => {
+    const allocation = Number(x.weight_pct ?? x.weight ?? x.allocation);
+    const delta = Number(x.change_mom ?? x.monthly_change);
+    const previousAllocation = Number.isFinite(allocation) && Number.isFinite(delta)
+      ? allocation - delta : null;
+    return {
+      company: x.stock_name || x.name || x.company || "",
+      stock: x.symbol || x.ticker || "",
+      allocation,
+      previousAllocation,
+      asOf: data.month || data.as_of || null
+    };
+  }).filter(x => x.company && Number.isFinite(x.allocation) && x.allocation > 0);
+
+  if (!rows.length) throw new Error("MFData returned no equity holdings");
+  return {
+    fund: fundName,
+    status: "OK",
+    rows,
+    source: `MFData family ${familyId}${familyName ? " · " + familyName : ""}`,
+    asOf: data.month || data.as_of || null,
+    asOfLabel: data.month ? `Portfolio as of ${data.month}` : "Latest portfolio from MFData"
+  };
+}
+
 async function fetchMomentumFundHoldings(fund, forceRefresh=false) {
   const cached = momentumHoldingsCache.get(fund.fund);
   if (!forceRefresh && cached) {
@@ -2032,6 +2119,17 @@ async function fetchMomentumFundHoldings(fund, forceRefresh=false) {
         if (timer) clearTimeout(timer);
       }
     }
+  }
+
+  // Some AMC pages are JavaScript/PDF driven or block cloud IPs. Use the
+  // structured MFData holdings API only as a fallback when all configured
+  // sources fail, preserving the official/source-specific path as first choice.
+  try {
+    const value = await fetchMfDataHoldings(fund.fund);
+    momentumHoldingsCache.set(fund.fund, {timestamp: Date.now(), value});
+    return value;
+  } catch (e) {
+    errors.push(`MFData fallback: ${e?.message || "unknown error"}`);
   }
 
   const value = {
@@ -2299,6 +2397,37 @@ const ipoMarketCache = { timestamp: 0, data: null };
 // Universe is maintained in config/ipoUniverse.js. No 30-stock cap is applied here.
 
 
+const ipoYahooSearchCache = new Map();
+
+async function searchYahooIpoTickers(ipo) {
+  const key = `${String(ipo?.symbol || "").toUpperCase()}|${String(ipo?.company || "")}`;
+  if (ipoYahooSearchCache.has(key)) return ipoYahooSearchCache.get(key);
+
+  const queries = [ipo?.symbol, ipo?.company].filter(Boolean);
+  const found = [];
+  for (const q of queries) {
+    try {
+      const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=8&newsCount=0`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
+          "Accept": "application/json,text/plain,*/*"
+        }
+      });
+      if (!response.ok) throw new Error(`Yahoo search HTTP ${response.status}`);
+      const json = await response.json();
+      for (const quote of (json?.quotes || [])) {
+        const ticker = String(quote?.symbol || "").toUpperCase();
+        const type = String(quote?.quoteType || "").toUpperCase();
+        if (type === "EQUITY" && (ticker.endsWith(".NS") || ticker.endsWith(".BO"))) found.push(ticker);
+      }
+    } catch (_) {}
+  }
+  const out = [...new Set(found)];
+  ipoYahooSearchCache.set(key, out);
+  return out;
+}
+
 async function fetchIpoPriceHistory(ipo) {
   const symbol = String(ipo?.symbol || "").trim().toUpperCase();
   const configured = IPO_YAHOO_SYMBOL_ALIASES[symbol] || [];
@@ -2310,18 +2439,30 @@ async function fetchIpoPriceHistory(ipo) {
     symbol ? `${symbol}.NS` : null,
     symbol ? `${symbol}.BO` : null
   ].filter(Boolean))];
-  const merged = new Map();
+
   let lastError = null;
-  for (const ticker of candidates) {
-    try {
-      const rows = await fetchYahooHistory(ticker, 5 * 366);
-      for (const row of rows) merged.set(row.date, row);
-      // Prefer the first exchange with a usable current quote. Keeping the
-      // first successful history avoids mixing prices from different exchanges.
-      if (rows.length >= 2) return rows;
-    } catch (e) { lastError = e; }
-  }
-  throw new Error(`${symbol}: ${lastError?.message || "Yahoo price history unavailable on NSE/BSE"}`);
+  const tryCandidates = async list => {
+    for (const ticker of list) {
+      try {
+        const rows = await fetchYahooHistory(ticker, 5 * 366);
+        if (rows.length >= 2) return rows;
+      } catch (e) { lastError = e; }
+    }
+    return null;
+  };
+
+  // First try the configured/exact NSE and BSE symbols.
+  const direct = await tryCandidates(candidates);
+  if (direct) return direct;
+
+  // Recent IPO symbols sometimes differ from the exchange/Yahoo short code.
+  // Discover the verified Yahoo NSE/BSE ticker from the company name, then
+  // request history for that exact result.
+  const discovered = await searchYahooIpoTickers(ipo);
+  const searched = await tryCandidates(discovered.filter(x => !candidates.includes(x)));
+  if (searched) return searched;
+
+  throw new Error(`${symbol}: ${lastError?.message || "Yahoo price history unavailable after NSE/BSE symbol search"}`);
 }
 
 async function getIpoMarketData(refresh=false) {
