@@ -1809,7 +1809,8 @@ const MOMENTUM_HOLDING_SOURCES = {
     "https://www.hdfcfund.com/statutory-disclosure/portfolio/monthly-portfolio"
   ],
   "SBI Small Cap Fund": [
-    "https://decryptmutualfunds.com/fund-houses/sbi/small-cap-fund"
+    "https://decryptmutualfunds.com/fund-houses/sbi/small-cap-fund",
+    "https://www.financialexpress.com/mutual-funds/sbi-small-cap-fund-direct-plan-growth-INF200K01T51/"
   ],
   "Kotak Small Cap Fund": [
     "https://decryptmutualfunds.com/fund-houses/kotak-mahindra/small-cap-fund"
@@ -1822,14 +1823,16 @@ const MOMENTUM_HOLDING_SOURCES = {
   ],
   "Invesco India Smallcap Fund": [
     "https://www.invescomutualfund.com/our-funds/fund/equity/invesco-india-small-cap-fund/SCGP",
-    "https://scripbook.com/scheme/sch-invesco-invesco-india-smallcap-fund/"
+    "https://scripbook.com/scheme/sch-invesco-invesco-india-smallcap-fund/",
+    "https://economictimes.indiatimes.com/invesco-india-smallcap-fund-direct-plan/fund-factsheet/schemeid-37843.cms"
   ],
   "HSBC Small Cap Fund": [
     "https://decryptmutualfunds.com/fund-houses/hsbc/small-cap-fund"
   ],
   "Bandhan Small Cap Fund": [
     "https://scripbook.com/scheme/sch-bandhan-bandhan-small-cap-fund/",
-    "https://cmsnew.bandhanmutual.com/category/scheme-portfolios/"
+    "https://cmsnew.bandhanmutual.com/category/scheme-portfolios/",
+    "https://economictimes.indiatimes.com/bandhan-small-cap-fund-direct-plan/fund-factsheet/schemeid-40564.cms"
   ],
   "Edelweiss Small Cap Fund": [
     "https://decryptmutualfunds.com/fund-houses/edelweiss/small-cap-fund"
