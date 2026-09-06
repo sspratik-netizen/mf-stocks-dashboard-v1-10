@@ -2451,8 +2451,9 @@ app.get("/api/momentum-watch", async (req,res) => {
 // -------------------- IPO MARKET (LAST 3 YEARS) --------------------
 // Listing price/date are maintained as a curated NSE mainboard IPO universe.
 // Current market price is refreshed from Yahoo Finance daily data.
-const IPO_CACHE_TTL_MS = 30 * 60 * 1000;
+const IPO_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const ipoMarketCache = { timestamp: 0, data: null };
+let ipoMarketRefreshPromise = null;
 // Universe is maintained in config/ipoUniverse.js. No 30-stock cap is applied here.
 
 
@@ -2489,6 +2490,55 @@ async function searchYahooIpoTickers(ipo) {
   return out;
 }
 
+async function fetchIpoLatestPrice(ticker) {
+  const symbol = String(ticker || "").trim().toUpperCase();
+  if (!symbol) throw new Error("Empty Yahoo symbol");
+
+  const end = Math.floor(Date.now() / 1000);
+  const start = end - 10 * 86400;
+  const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
+  let lastError = null;
+
+  // IPO Market only needs the latest exchange close. Keep this path fast and
+  // avoid the 4 retries + long backoff used by technical-analysis history.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const host = hosts[attempt];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const url = `https://${host}/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${start}&period2=${end}&interval=1d&events=div%2Csplits`;
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
+          "Accept": "application/json,text/plain,*/*"
+        }
+      });
+      if (!response.ok) throw new Error(`Yahoo HTTP ${response.status}`);
+      const json = await response.json();
+      const result = json?.chart?.result?.[0];
+      const timestamps = result?.timestamp || [];
+      const closes = result?.indicators?.quote?.[0]?.close || [];
+      for (let i = timestamps.length - 1; i >= 0; i--) {
+        const price = Number(closes[i]);
+        if (Number.isFinite(price) && price > 0) {
+          return {
+            date: new Date(timestamps[i] * 1000).toISOString().slice(0, 10),
+            rawClose: price,
+            close: price
+          };
+        }
+      }
+      throw new Error("No recent Yahoo close");
+    } catch (e) {
+      lastError = e;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw lastError || new Error("Yahoo latest price unavailable");
+}
+
 async function fetchIpoPriceHistory(ipo) {
   const symbol = String(ipo?.symbol || "").trim().toUpperCase();
   const configured = IPO_YAHOO_SYMBOL_ALIASES[symbol] || [];
@@ -2503,24 +2553,25 @@ async function fetchIpoPriceHistory(ipo) {
     const cached = ipoPriceHistoryCache.get(ticker);
     if (cached && Date.now() - cached.timestamp < IPO_TICKER_CACHE_TTL_MS) return cached.rows;
     try {
-      // The IPO screen already stores the issue price, so it only needs a
-      // recent valid close. Avoid downloading five years for every IPO.
-      const rows = await fetchYahooHistory(ticker, 45);
-      if (rows.length >= 1) {
-        ipoPriceHistoryCache.set(ticker, {timestamp: Date.now(), rows});
-        return rows;
-      }
-    } catch (e) { lastError = e; }
-    return null;
+      const latest = await fetchIpoLatestPrice(ticker);
+      const rows = [latest];
+      ipoPriceHistoryCache.set(ticker, {timestamp: Date.now(), rows});
+      return rows;
+    } catch (e) {
+      lastError = e;
+      return null;
+    }
   };
 
+  // Usually the exact NSE symbol works, so this is normally one fast request.
   for (const ticker of candidates) {
     const rows = await tryTicker(ticker);
     if (rows) return rows;
   }
 
+  // Search Yahoo only for the small number of symbols that do not match.
   const discovered = await searchYahooIpoTickers(ipo);
-  for (const ticker of discovered) {
+  for (const ticker of discovered.slice(0, 4)) {
     if (candidates.includes(ticker)) continue;
     const rows = await tryTicker(ticker);
     if (rows) return rows;
@@ -2549,14 +2600,38 @@ async function getIpoMarketData(refresh=false) {
       const annualized = Number.isFinite(change) && years>0 && listingPrice>0 && currentPrice>0 ? (Math.pow(currentPrice/listingPrice,1/years)-1)*100 : null;
       return {...ipo, currentPrice, currentDate:latest?.date||null, change, annualized, status:'OK'};
     } catch (e) { return {...ipo,currentPrice:null,currentDate:null,change:null,annualized:null,status:'UNAVAILABLE',error:e.message}; }
-  }, 2);
-  const data={updatedAt:new Date().toISOString(), startDate:'rolling 3-year window', source:'Configured NSE/BSE mainboard IPO universe (SME excluded) + Yahoo Finance current/daily prices', rows};
+  }, 6);
+  const data={updatedAt:new Date().toISOString(), startDate:'rolling 3-year window', source:'Configured NSE/BSE mainboard IPO universe (SME excluded) + Yahoo Finance latest exchange closes', rows};
   ipoMarketCache.timestamp=Date.now(); ipoMarketCache.data=data; return data;
 }
 
 app.get('/api/ipo-market', async (req,res)=>{
-  try { res.json(await getIpoMarketData(req.query.refresh==='1')); }
-  catch(e){ console.error(e); res.status(500).json({error:'Unable to load IPO market',details:e.message}); }
+  try {
+    const refresh = req.query.refresh === '1';
+    const cacheFresh = ipoMarketCache.data &&
+      Date.now() - ipoMarketCache.timestamp < IPO_CACHE_TTL_MS;
+
+    // Serve existing data immediately. A manual refresh updates prices in the
+    // background so the page never sits on a spinner for dozens of seconds.
+    if (ipoMarketCache.data && (refresh || cacheFresh)) {
+      if ((refresh || !cacheFresh) && !ipoMarketRefreshPromise) {
+        ipoMarketRefreshPromise = getIpoMarketData(true)
+          .catch(e => console.error("IPO background refresh failed:", e.message))
+          .finally(() => { ipoMarketRefreshPromise = null; });
+      }
+      return res.json({
+        ...ipoMarketCache.data,
+        refreshing: Boolean(ipoMarketRefreshPromise),
+        cached: true
+      });
+    }
+
+    const data = await getIpoMarketData(false);
+    res.json({...data, refreshing:false, cached:false});
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({error:'Unable to load IPO market',details:e.message});
+  }
 });
 app.get('/ipo-market',(req,res)=>res.sendFile(path.join(__dirname,'public','ipo-market.html')));
 
