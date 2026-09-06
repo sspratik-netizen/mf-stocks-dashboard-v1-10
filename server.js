@@ -1809,6 +1809,7 @@ const MOMENTUM_HOLDING_SOURCES = {
     "https://www.hdfcfund.com/statutory-disclosure/portfolio/monthly-portfolio"
   ],
   "SBI Small Cap Fund": [
+    "https://mfiframes.mutualfundsindia.com/askmefund/factsheet.aspx?param=10509",
     "https://decryptmutualfunds.com/fund-houses/sbi/small-cap-fund",
     "https://www.financialexpress.com/mutual-funds/sbi-small-cap-fund-direct-plan-growth-INF200K01T51/"
   ],
@@ -1822,6 +1823,7 @@ const MOMENTUM_HOLDING_SOURCES = {
     "https://decryptmutualfunds.com/fund-houses/quant/small-cap-fund"
   ],
   "Invesco India Smallcap Fund": [
+    "https://mfiframes.mutualfundsindia.com/askmefund/factsheet.aspx?param=38787",
     "https://www.invescomutualfund.com/our-funds/fund/equity/invesco-india-small-cap-fund/SCGP",
     "https://scripbook.com/scheme/sch-invesco-invesco-india-smallcap-fund/",
     "https://economictimes.indiatimes.com/invesco-india-smallcap-fund-direct-plan/fund-factsheet/schemeid-37843.cms"
@@ -1830,6 +1832,7 @@ const MOMENTUM_HOLDING_SOURCES = {
     "https://decryptmutualfunds.com/fund-houses/hsbc/small-cap-fund"
   ],
   "Bandhan Small Cap Fund": [
+    "https://mfiframes.mutualfundsindia.com/askmefund/factsheet.aspx?param=41625",
     "https://scripbook.com/scheme/sch-bandhan-bandhan-small-cap-fund/",
     "https://cmsnew.bandhanmutual.com/category/scheme-portfolios/",
     "https://economictimes.indiatimes.com/bandhan-small-cap-fund-direct-plan/fund-factsheet/schemeid-40564.cms"
@@ -1923,7 +1926,50 @@ function parsePortfolioAsOfDate(html) {
   return null;
 }
 
+function parseMfiTopHoldings(html) {
+  const rows = [];
+  const trMatches = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
+  for (const tr of trMatches) {
+    const cells = [...tr.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)]
+      .map(m => stripHtml(m[1]).replace(/\s+/g, " ").trim());
+    if (cells.length < 3) continue;
+
+    const company = cells[0];
+    const sector = cells[1];
+    const pctCell = cells.find(x => /\d+(?:\.\d+)?\s*%/.test(x));
+    if (!pctCell) continue;
+    if (!company || /^(company name|security|scheme|fund name|total)$/i.test(company)) continue;
+    if (/^(sector name|industry|asset class)$/i.test(sector)) continue;
+
+    // MFI factsheets have Company Name | Sector Name | Asset %. Avoid
+    // accidentally treating sector-allocation tables as stock holdings.
+    if (/financial services|healthcare|capital goods|current assets|realty|chemicals|textiles|technology/i.test(company) &&
+        !/ltd|limited|bank|inc|corp|industries|pharma|motors|systems|services|foods|power|finance|engineering/i.test(company)) {
+      continue;
+    }
+
+    const allocation = parsePct(pctCell);
+    if (!Number.isFinite(allocation) || allocation <= 0) continue;
+    if (/cash|treps|repo|receivable|payable|net current|treasury bill|accrued interest/i.test(company)) continue;
+
+    rows.push({
+      company,
+      isin: null,
+      allocation,
+      previousAllocation: null,
+      deltaAllocation: null,
+      changeType: null,
+      asOf: null,
+      previousAsOf: null
+    });
+  }
+  return rows;
+}
+
 function parseHoldingRowsFromHtml(html) {
+  const mfiRows = parseMfiTopHoldings(html);
+  if (mfiRows.length >= 5) return mfiRows;
+
   const rows = [];
   const portfolioAsOf = parsePortfolioAsOfDate(html);
   const trMatches = String(html || "").match(/<tr\b[\s\S]*?<\/tr>/gi) || [];
