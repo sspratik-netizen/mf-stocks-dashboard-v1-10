@@ -1786,6 +1786,9 @@ const MOMENTUM_TOP_FUNDS_PER_CATEGORY = 10;
 const MOMENTUM_MIN_FUNDS_HOLDING = 2;
 const MOMENTUM_CORRECTION_DAYS = 63;
 const MOMENTUM_HOLDINGS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// A failed public source must never be cached for a whole day.
+const MOMENTUM_HOLDINGS_ERROR_CACHE_TTL_MS = 5 * 60 * 1000;
+const MOMENTUM_SOURCE_ATTEMPTS = 2;
 const momentumHoldingsCache = new Map();
 const momentumStockStatsCache = new Map();
 const sectorStrengthCache = { timestamp: 0, data: null };
@@ -1801,6 +1804,7 @@ const MOMENTUM_HOLDING_SOURCES = {
     "https://decryptmutualfunds.com/fund-houses/nippon-india/small-cap-fund"
   ],
   "HDFC Small Cap Fund": [
+    "https://decryptmutualfunds.com/fund-houses/hdfc/small-cap-fund",
     "https://www.hdfcfund.com/explore/mutual-funds/hdfc-small-cap-fund/regular",
     "https://www.hdfcfund.com/statutory-disclosure/portfolio/monthly-portfolio"
   ],
@@ -1980,49 +1984,60 @@ function parseHoldingRowsFromHtml(html) {
   return rows;
 }
 
-async function fetchMomentumFundHoldings(fund) {
+async function fetchMomentumFundHoldings(fund, forceRefresh=false) {
   const cached = momentumHoldingsCache.get(fund.fund);
-  if (cached && Date.now() - cached.timestamp < MOMENTUM_HOLDINGS_CACHE_TTL_MS) return cached.value;
+  if (!forceRefresh && cached) {
+    const ttl = cached.value?.status === "OK"
+      ? MOMENTUM_HOLDINGS_CACHE_TTL_MS
+      : MOMENTUM_HOLDINGS_ERROR_CACHE_TTL_MS;
+    if (Date.now() - cached.timestamp < ttl) return cached.value;
+  }
 
   const urls = MOMENTUM_HOLDING_SOURCES[fund.fund] || [];
-  let lastError = null;
+  const errors = [];
 
   for (const url of urls) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml"
-        }
-      });
-      clearTimeout(timer);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const html = await response.text();
-      const rows = parseHoldingRowsFromHtml(html);
-      if (!rows.length) throw new Error("No equity holdings could be parsed from source");
+    for (let attempt = 1; attempt <= MOMENTUM_SOURCE_ATTEMPTS; attempt++) {
+      let timer = null;
+      try {
+        const controller = new AbortController();
+        timer = setTimeout(() => controller.abort(), 20000);
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-IN,en;q=0.9"
+          }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        const rows = parseHoldingRowsFromHtml(html);
+        if (!rows.length) throw new Error("No equity holdings could be parsed from source");
 
-      const value = {
-        fund: fund.fund,
-        status: "OK",
-        rows,
-        source: url,
-        asOf: rows.find(r=>r.asOf)?.asOf || null,
-        asOfLabel: rows.find(r=>r.asOf)?.asOf ? `Portfolio as of ${rows.find(r=>r.asOf).asOf}` : "Latest monthly portfolio available from source"
-      };
-      momentumHoldingsCache.set(fund.fund, {timestamp: Date.now(), value});
-      return value;
-    } catch (e) {
-      lastError = e;
+        const value = {
+          fund: fund.fund,
+          status: "OK",
+          rows,
+          source: url,
+          asOf: rows.find(r=>r.asOf)?.asOf || null,
+          asOfLabel: rows.find(r=>r.asOf)?.asOf ? `Portfolio as of ${rows.find(r=>r.asOf).asOf}` : "Latest monthly portfolio available from source"
+        };
+        momentumHoldingsCache.set(fund.fund, {timestamp: Date.now(), value});
+        return value;
+      } catch (e) {
+        errors.push(`${url} (attempt ${attempt}): ${e?.message || "unknown error"}`);
+        if (attempt < MOMENTUM_SOURCE_ATTEMPTS) await new Promise(resolve => setTimeout(resolve, 800 * attempt));
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
     }
   }
 
   const value = {
     fund: fund.fund,
     status: "ERROR",
-    error: lastError?.message || "No holdings source configured"
+    error: errors.length ? errors.join(" | ") : "No holdings source configured"
   };
   momentumHoldingsCache.set(fund.fund, {timestamp: Date.now(), value});
   return value;
@@ -2240,7 +2255,8 @@ async function getMomentumWatchData(refresh=false) {
     ...topFunds["Mid Cap"].map(f => ({...f, category: "Mid Cap"}))
   ];
   const records = await runWithConcurrency(categoryFundList, async fund => {
-    const r = await fetchMomentumFundHoldings(fund);
+    // Refresh must retry source failures instead of reusing a stale failure cache.
+    const r = await fetchMomentumFundHoldings(fund, refresh);
     return {...r, category: fund.category};
   }, 5);
   const available = records.filter(x => x.status === "OK");
