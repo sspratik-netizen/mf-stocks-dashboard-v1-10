@@ -2595,9 +2595,22 @@ async function getIpoMarketData(refresh=false) {
       // Use the actual latest exchange close for the IPO screen rather than
       // dividend-adjusted history, so the displayed current price matches a quote.
       const currentPrice = latest?.rawClose ?? latest?.close ?? null;
-      const change = Number.isFinite(listingPrice) && Number.isFinite(currentPrice) && listingPrice !== 0 ? (currentPrice-listingPrice)/listingPrice*100 : null;
-      const years = (Date.now()-Date.parse(ipo.listingDate+'T00:00:00Z'))/(365.25*86400000);
-      const annualized = Number.isFinite(change) && years>0 && listingPrice>0 && currentPrice>0 ? (Math.pow(currentPrice/listingPrice,1/years)-1)*100 : null;
+      const change = Number.isFinite(listingPrice) && Number.isFinite(currentPrice) && listingPrice !== 0
+        ? (currentPrice-listingPrice)/listingPrice*100
+        : null;
+
+      // CAGR is misleading for very recent IPOs. A few days of price movement
+      // annualized mathematically can produce absurd numbers (millions/billions %).
+      // Show annualized return only after a full year of listed trading.
+      const valuationDate = latest?.date
+        ? Date.parse(latest.date + 'T00:00:00Z')
+        : Date.now();
+      const listingDateMs = Date.parse(ipo.listingDate + 'T00:00:00Z');
+      const years = (valuationDate - listingDateMs) / (365.25 * 86400000);
+      const annualized = Number.isFinite(change) && years >= 1 && listingPrice > 0 && currentPrice > 0
+        ? (Math.pow(currentPrice/listingPrice, 1/years)-1)*100
+        : null;
+
       return {...ipo, currentPrice, currentDate:latest?.date||null, change, annualized, status:'OK'};
     } catch (e) { return {...ipo,currentPrice:null,currentDate:null,change:null,annualized:null,status:'UNAVAILABLE',error:e.message}; }
   }, 6);
