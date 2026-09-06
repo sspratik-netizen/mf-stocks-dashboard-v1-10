@@ -2457,6 +2457,8 @@ const ipoMarketCache = { timestamp: 0, data: null };
 
 
 const ipoYahooSearchCache = new Map();
+const ipoPriceHistoryCache = new Map();
+const IPO_TICKER_CACHE_TTL_MS = 15 * 60 * 1000;
 
 async function searchYahooIpoTickers(ipo) {
   const key = `${String(ipo?.symbol || "").toUpperCase()}|${String(ipo?.company || "")}`;
@@ -2490,9 +2492,6 @@ async function searchYahooIpoTickers(ipo) {
 async function fetchIpoPriceHistory(ipo) {
   const symbol = String(ipo?.symbol || "").trim().toUpperCase();
   const configured = IPO_YAHOO_SYMBOL_ALIASES[symbol] || [];
-  // Yahoo does not expose every recent IPO on NSE immediately, while the same
-  // mainboard security can already be available on BSE. Try verified aliases
-  // first, then NSE and BSE exchange suffixes for the exact same company.
   const candidates = [...new Set([
     ...configured,
     symbol ? `${symbol}.NS` : null,
@@ -2500,28 +2499,34 @@ async function fetchIpoPriceHistory(ipo) {
   ].filter(Boolean))];
 
   let lastError = null;
-  const tryCandidates = async list => {
-    for (const ticker of list) {
-      try {
-        const rows = await fetchYahooHistory(ticker, 5 * 366);
-        if (rows.length >= 2) return rows;
-      } catch (e) { lastError = e; }
-    }
+  const tryTicker = async ticker => {
+    const cached = ipoPriceHistoryCache.get(ticker);
+    if (cached && Date.now() - cached.timestamp < IPO_TICKER_CACHE_TTL_MS) return cached.rows;
+    try {
+      // The IPO screen already stores the issue price, so it only needs a
+      // recent valid close. Avoid downloading five years for every IPO.
+      const rows = await fetchYahooHistory(ticker, 45);
+      if (rows.length >= 1) {
+        ipoPriceHistoryCache.set(ticker, {timestamp: Date.now(), rows});
+        return rows;
+      }
+    } catch (e) { lastError = e; }
     return null;
   };
 
-  // First try the configured/exact NSE and BSE symbols.
-  const direct = await tryCandidates(candidates);
-  if (direct) return direct;
+  for (const ticker of candidates) {
+    const rows = await tryTicker(ticker);
+    if (rows) return rows;
+  }
 
-  // Recent IPO symbols sometimes differ from the exchange/Yahoo short code.
-  // Discover the verified Yahoo NSE/BSE ticker from the company name, then
-  // request history for that exact result.
   const discovered = await searchYahooIpoTickers(ipo);
-  const searched = await tryCandidates(discovered.filter(x => !candidates.includes(x)));
-  if (searched) return searched;
+  for (const ticker of discovered) {
+    if (candidates.includes(ticker)) continue;
+    const rows = await tryTicker(ticker);
+    if (rows) return rows;
+  }
 
-  throw new Error(`${symbol}: ${lastError?.message || "Yahoo price history unavailable after NSE/BSE symbol search"}`);
+  throw new Error(`${symbol}: ${lastError?.message || "Yahoo current price unavailable on NSE/BSE"}`);
 }
 
 async function getIpoMarketData(refresh=false) {
@@ -2544,8 +2549,8 @@ async function getIpoMarketData(refresh=false) {
       const annualized = Number.isFinite(change) && years>0 && listingPrice>0 && currentPrice>0 ? (Math.pow(currentPrice/listingPrice,1/years)-1)*100 : null;
       return {...ipo, currentPrice, currentDate:latest?.date||null, change, annualized, status:'OK'};
     } catch (e) { return {...ipo,currentPrice:null,currentDate:null,change:null,annualized:null,status:'UNAVAILABLE',error:e.message}; }
-  }, 6);
-  const data={updatedAt:new Date().toISOString(), startDate:'rolling 3-year window', source:'Configured NSE/BSE mainboard IPO universe (SME excluded) + Yahoo Finance daily prices', rows};
+  }, 2);
+  const data={updatedAt:new Date().toISOString(), startDate:'rolling 3-year window', source:'Configured NSE/BSE mainboard IPO universe (SME excluded) + Yahoo Finance current/daily prices', rows};
   ipoMarketCache.timestamp=Date.now(); ipoMarketCache.data=data; return data;
 }
 
