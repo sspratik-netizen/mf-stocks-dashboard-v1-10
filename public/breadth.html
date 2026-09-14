@@ -66,6 +66,7 @@
           <th>Above SMA50</th>
           <th>Above SMA100</th>
           <th>Above SMA200</th>
+          <th>PCR (OI)</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -83,8 +84,13 @@
         55-trading-day relative outperformance versus the index benchmark.
       </p>
       <p>
-        The page shows the last 30 available trading sessions using the current constituent list. The data is a
-        screening/market-health indicator, not an investment recommendation.
+        <b>PCR (OI)</b> is Nifty Put Open Interest divided by Call Open Interest for the nearest available expiry.
+        Around 1.0 is broadly balanced; lower values indicate relatively more Call OI and higher values relatively more Put OI.
+        PCR is a context indicator and should not be used alone.
+      </p>
+      <p>
+        The page shows the last 30 available trading sessions using the current constituent list. PCR is shown for the latest Nifty 50 row when the NSE option-chain feed is available.
+        The data is a screening/market-health indicator, not an investment recommendation.
       </p>
     </div>
   </section>
@@ -95,11 +101,12 @@
   </section>
 
   <footer>
-    <span>Price data: Yahoo Finance · Constituents: NSE API / Nifty 50 fallback</span>
+    <span>Price data: Yahoo Finance · Constituents: NSE API / Nifty 50 fallback · PCR: NSE option chain</span>
     <span id="breadthUpdated"></span>
   </footer>
 </main>
 <script src="/page-loading.js"></script>
+<script src="/feature-help.js"></script>
 <script src="/breadth.js"></script>
 </body>
 </html>
