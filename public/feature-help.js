@@ -16,25 +16,29 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .feature-help-panel{box-sizing:border-box;width:300px;background:linear-gradient(180deg,rgba(20,30,50,.98),rgba(13,20,36,.98));border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:18px;color:#e5e7eb;box-shadow:0 14px 40px rgba(0,0,0,.22);position:fixed;right:22px;top:225px;z-index:30;max-height:calc(100vh - 245px);overflow:auto}
-    .feature-help-panel h3{margin:0 0 8px;font-size:17px;color:#fff}.feature-help-panel .help-intro{margin:0 0 12px;color:#b8c3d4;line-height:1.45;font-size:13px}.feature-help-panel ul{margin:0;padding-left:18px}.feature-help-panel li{margin:0 0 10px;color:#dbe3ee;font-size:13px;line-height:1.45}.feature-help-panel .help-footer{border-top:1px solid rgba(148,163,184,.18);margin-top:14px;padding-top:12px;color:#9fb0c6;font-size:12px;line-height:1.45}.feature-help-panel .help-badge{display:inline-block;margin-bottom:10px;padding:4px 8px;border-radius:999px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-    .feature-help-titlebar{box-sizing:border-box;width:300px;position:fixed;right:22px;top:58px;z-index:31;padding:14px 18px;border:1px solid rgba(148,163,184,.18);border-radius:14px;background:rgba(20,30,50,.96);box-shadow:0 10px 28px rgba(0,0,0,.18);color:#fff;font-size:15px;font-weight:800;letter-spacing:.01em}.feature-help-titlebar small{display:block;margin-top:4px;color:#9fb0c6;font-size:11px;font-weight:600;letter-spacing:.03em}
-    @media (min-width:1100px){main.container{padding-right:340px!important}.feature-help-panel,.feature-help-titlebar{right:20px}}
-    @media (max-width:1099px){.feature-help-titlebar{position:relative;right:auto;top:auto;width:auto;margin:0 0 10px}.feature-help-panel{position:relative;right:auto;top:auto;width:auto;max-height:none;margin:0 0 18px}.feature-help-panel+*{margin-top:0}}
-    @media (max-width:700px){.feature-help-titlebar{border-radius:12px;padding:12px 14px}.feature-help-panel{border-radius:12px;padding:14px}.feature-help-panel li{margin-bottom:8px}}
+    .feature-help-link{position:fixed;right:10px;top:50%;transform:translateY(-50%);z-index:40;display:flex;align-items:center;gap:6px;padding:9px 11px;border:1px solid rgba(148,163,184,.28);border-radius:999px;background:rgba(20,30,50,.96);color:#dbeafe;text-decoration:none;font-size:12px;font-weight:800;box-shadow:0 8px 22px rgba(0,0,0,.18);white-space:nowrap}
+    .feature-help-link:hover{background:rgba(30,45,70,.98);color:#fff}
+    .feature-help-section{box-sizing:border-box;max-width:1100px;margin:48px auto 36px;padding:28px 30px;border:1px solid rgba(148,163,184,.24);border-radius:18px;background:linear-gradient(180deg,rgba(20,30,50,.98),rgba(13,20,36,.98));color:#e5e7eb;box-shadow:0 12px 34px rgba(0,0,0,.14);scroll-margin-top:24px}
+    .feature-help-section .help-badge{display:inline-block;margin-bottom:10px;padding:4px 8px;border-radius:999px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+    .feature-help-section h2{margin:0 0 8px;color:#fff;font-size:22px}.feature-help-section .help-intro{margin:0 0 18px;color:#b8c3d4;line-height:1.55;font-size:14px}.feature-help-section ul{margin:0;padding-left:20px}.feature-help-section li{margin:0 0 11px;color:#dbe3ee;font-size:14px;line-height:1.5}.feature-help-section .help-footer{border-top:1px solid rgba(148,163,184,.18);margin-top:18px;padding-top:14px;color:#9fb0c6;font-size:12px;line-height:1.5}
+    @media (min-width:1100px){main.container{padding-right:0!important}}
+    @media (max-width:700px){.feature-help-link{right:7px;padding:8px 10px;font-size:11px}.feature-help-section{margin:34px 12px 28px;padding:22px 18px;border-radius:14px}.feature-help-section h2{font-size:19px}.feature-help-section li{font-size:13px}}
   `;
   document.head.appendChild(style);
 
-  const titlebar = document.createElement("aside");
-  titlebar.className = "feature-help-titlebar";
-  titlebar.innerHTML = `${guide.title}<small>Feature Guide</small>`;
+  const link = document.createElement("a");
+  link.className = "feature-help-link";
+  link.href = "#feature-help";
+  link.innerHTML = "How to use ↓";
+  link.title = "Jump to the How to use guide";
+  document.body.appendChild(link);
 
-  const panel = document.createElement("aside");
-  panel.className = "feature-help-panel";
-  panel.innerHTML = `<div class="help-badge">Feature guide</div><h3>${guide.title}</h3><p class="help-intro">${guide.intro}</p><ul>${guide.points.map(x => `<li>${x}</li>`).join("")}</ul><div class="help-footer">${guide.footer}</div>`;
+  const section = document.createElement("section");
+  section.id = "feature-help";
+  section.className = "feature-help-section";
+  section.innerHTML = `<div class="help-badge">Feature guide</div><h2>${guide.title}</h2><p class="help-intro">${guide.intro}</p><ul>${guide.points.map(x => `<li>${x}</li>`).join("")}</ul><div class="help-footer">${guide.footer}</div>`;
 
-  const hero = document.querySelector("main.container .hero") || document.querySelector("main.stock-page .stock-head");
-  const main = hero?.closest("main");
-  if (hero && main) hero.insertAdjacentElement("afterend", panel);
-  document.body.appendChild(titlebar);
+  const main = document.querySelector("main");
+  if (main) main.appendChild(section);
+  else document.body.appendChild(section);
 })();
