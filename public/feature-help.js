@@ -1,94 +1,14 @@
 (() => {
   const path = location.pathname.replace(/\/$/, "") || "/";
   const guides = {
-    "/": {
-      title: "How to use Mutual Funds",
-      intro: "Compare short- and long-term fund performance, category rank and the screening signal.",
-      points: [
-        "Use 30D to spot recent strength or correction; 180D/360D show whether the longer trend is intact.",
-        "Category Rank compares funds within their category using the dashboard's longer-term performance ranking.",
-        "Momentum means positive recent and longer-term performance. Attractive / Strong Accumulation identify corrections in higher-ranked funds.",
-        "Use the signal as a shortlist, then check the fund's mandate, portfolio, risk and valuation before investing."
-      ],
-      footer: "Signals are screening outputs, not personalized investment advice."
-    },
-    "/breadth": {
-      title: "How to use Market Breadth",
-      intro: "Breadth tells you whether a market move is supported by many constituents or only a small group.",
-      points: [
-        "RS55 > 0 counts stocks outperforming the selected index over 55 trading days.",
-        "SMA20/50/100/200 counts stocks trading above each moving average. Higher breadth generally means broader participation.",
-        "PCR is Put Open Interest ÷ Call Open Interest for the nearest Nifty 50 option expiry. Use it as context, not as a standalone signal.",
-        "Look for confirmation: improving breadth plus a supportive trend is generally more useful than one isolated reading."
-      ],
-      footer: "PCR uses the latest available NSE option-chain OI; historical PCR is not back-filled when exchange history is unavailable."
-    },
-    "/momentum-watch": {
-      title: "How to use Momentum Watch",
-      intro: "Find stocks that are shared across leading Small Cap or Mid Cap funds and examine allocation changes.",
-      points: [
-        "Funds shows how many selected funds currently hold the stock.",
-        "Avg Allocation shows the average portfolio weight among funds that hold it.",
-        "Δ Allocation shows whether tracked funds are increasing or reducing exposure versus the prior month.",
-        "Correction and SMA status help separate recent weakness from a still-intact trend."
-      ],
-      footer: "Holdings are disclosure-based and can lag the live market. This is a research screen, not a buy recommendation."
-    },
-    "/sector-strength": {
-      title: "How to use Sector Strength",
-      intro: "Compare sector momentum and breadth to identify areas with stronger or weaker participation.",
-      points: [
-        "1M, 3M and 6M show sector price momentum over different horizons.",
-        "SMA breadth shows how many analysed stocks are above each moving average.",
-        "Strength combines momentum and breadth; use Coverage to see how complete the underlying stock data is.",
-        "A sector is more convincing when both momentum and breadth improve together."
-      ],
-      footer: "Sector strength is a quantitative screening indicator, not a sector allocation recommendation."
-    },
-    "/opportunity-radar": {
-      title: "How to use Opportunity Radar",
-      intro: "A transparent screening score combines mutual-fund consensus, allocation flow, momentum, trend and correction.",
-      points: [
-        "MF Consensus shows how widely the stock appears across tracked funds.",
-        "Allocation Δ highlights recent fund-manager buying or selling pressure.",
-        "3M trend and SMA position help confirm whether the stock still has technical strength.",
-        "Use High Opportunity and Watch as research buckets; always inspect the underlying stock and fund evidence."
-      ],
-      footer: "The score is not a valuation model, price target or guaranteed return forecast."
-    },
-    "/ipo-market": {
-      title: "How to use IPO Market",
-      intro: "Compare recent mainboard IPOs by listing performance and current market price.",
-      points: [
-        "Return Since Listing compares the latest available market price with the IPO issue price.",
-        "Annualized return is shown only after at least one full year of listing, avoiding misleading short-period CAGR values.",
-        "Use the listing date and current data date to understand how long the stock has been trading.",
-        "Open the stock chart for context; a strong listing return does not by itself indicate future performance."
-      ],
-      footer: "SME IPOs are excluded from this screen."
-    },
-    "/patterns": {
-      title: "How to use Chart Patterns",
-      intro: "The scanner finds technical pattern candidates across the current Nifty 500 universe.",
-      points: [
-        "Recent contains formations that ended within the latest 30 trading sessions; Past contains older candidates in the scan window.",
-        "Confidence measures how strongly the algorithmic conditions matched the pattern rules.",
-        "Use the chart to inspect the actual price structure, trigger level and surrounding trend.",
-        "Confirm volume, support/resistance and breakout or breakdown behaviour before treating a pattern as actionable."
-      ],
-      footer: "Patterns are algorithmic candidates and may not match every human chartist's interpretation."
-    },
-    "/stock": {
-      title: "How to use Stock Detail",
-      intro: "Use this page to inspect a stock's price history, returns, moving averages and detected patterns.",
-      points: [
-        "Use the search box to find a Nifty 500 stock and load its historical price series.",
-        "1M–5Y returns provide multiple time horizons; compare them rather than relying on one period.",
-        "Technical Snapshot shows SMA20/50/200 and the 52-week range to provide trend context.",
-        "Chart Patterns are screening outputs and should be verified on the actual chart."
-      ],
-      footer: "Price and technical data are quantitative research aids, not investment advice."
-    }
+    "/": { title: "How to use Mutual Funds", intro: "Compare short- and long-term fund performance, category rank and the screening signal.", points: ["Use 30D to spot recent strength or correction; 180D/360D show whether the longer trend is intact.", "Category Rank compares funds within their category using the dashboard's longer-term performance ranking.", "Momentum means positive recent and longer-term performance. Attractive / Strong Accumulation identify corrections in higher-ranked funds.", "Use the signal as a shortlist, then check the fund's mandate, portfolio, risk and valuation before investing."], footer: "Signals are screening outputs, not personalized investment advice." },
+    "/breadth": { title: "How to use Market Breadth", intro: "Breadth tells you whether a market move is supported by many constituents or only a small group.", points: ["RS55 > 0 counts stocks outperforming the selected index over 55 trading days.", "SMA20/50/100/200 counts stocks trading above each moving average. Higher breadth generally means broader participation.", "PCR is Put Open Interest ÷ Call Open Interest for the nearest Nifty 50 option expiry. Use it as context, not as a standalone signal.", "Look for confirmation: improving breadth plus a supportive trend is generally more useful than one isolated reading."], footer: "PCR uses NSE option-chain OI when available." },
+    "/momentum-watch": { title: "How to use Momentum Watch", intro: "Find stocks that are shared across leading Small Cap or Mid Cap funds and examine allocation changes.", points: ["Funds shows how many selected funds currently hold the stock.", "Avg Allocation shows the average portfolio weight among funds that hold it.", "Δ Allocation shows whether tracked funds are increasing or reducing exposure versus the prior month.", "Correction and SMA status help separate recent weakness from a still-intact trend."], footer: "Holdings are disclosure-based and can lag the live market. This is a research screen, not a buy recommendation." },
+    "/sector-strength": { title: "How to use Sector Strength", intro: "Compare sector momentum and breadth to identify areas with stronger or weaker participation.", points: ["1M, 3M and 6M show sector price momentum over different horizons.", "SMA breadth shows how many analysed stocks are above each moving average.", "Strength combines momentum and breadth; use Coverage to see how complete the underlying stock data is.", "A sector is more convincing when both momentum and breadth improve together."], footer: "Sector strength is a quantitative screening indicator, not a sector allocation recommendation." },
+    "/opportunity-radar": { title: "How to use Opportunity Radar", intro: "A transparent screening score combines mutual-fund consensus, allocation flow, momentum, trend and correction.", points: ["MF Consensus shows how widely the stock appears across tracked funds.", "Allocation Δ highlights recent fund-manager buying or selling pressure.", "3M trend and SMA position help confirm whether the stock still has technical strength.", "Use High Opportunity and Watch as research buckets; always inspect the underlying stock and fund evidence."], footer: "The score is not a valuation model, price target or guaranteed return forecast." },
+    "/ipo-market": { title: "How to use IPO Market", intro: "Compare recent mainboard IPOs by listing performance and current market price.", points: ["Return Since Listing compares the latest available market price with the IPO issue price.", "Annualized return is shown only after at least one full year of listing, avoiding misleading short-period CAGR values.", "Use the listing date and current data date to understand how long the stock has been trading.", "Open the stock chart for context; a strong listing return does not by itself indicate future performance."], footer: "SME IPOs are excluded from this screen." },
+    "/patterns": { title: "How to use Chart Patterns", intro: "The scanner finds technical pattern candidates across the current Nifty 500 universe.", points: ["Recent contains formations that ended within the latest 30 trading sessions; Past contains older candidates in the scan window.", "Confidence measures how strongly the algorithmic conditions matched the pattern rules.", "Use the chart to inspect the actual price structure, trigger level and surrounding trend.", "Confirm volume, support/resistance and breakout or breakdown behaviour before treating a pattern as actionable."], footer: "Patterns are algorithmic candidates and may not match every human chartist's interpretation." },
+    "/stock": { title: "How to use Stock Detail", intro: "Use this page to inspect a stock's price history, returns, moving averages and detected patterns.", points: ["Use the search box to find a Nifty 500 stock and load its historical price series.", "1M–5Y returns provide multiple time horizons; compare them rather than relying on one period.", "Technical Snapshot shows SMA20/50/200 and the 52-week range to provide trend context.", "Chart Patterns are screening outputs and should be verified on the actual chart."], footer: "Price and technical data are quantitative research aids, not investment advice." }
   };
 
   const guide = guides[path];
@@ -96,25 +16,25 @@
 
   const style = document.createElement("style");
   style.textContent = `
-    .feature-help-panel{box-sizing:border-box;width:300px;background:linear-gradient(180deg,rgba(20,30,50,.98),rgba(13,20,36,.98));border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:18px;color:#e5e7eb;box-shadow:0 14px 40px rgba(0,0,0,.22);position:fixed;right:22px;top:178px;z-index:30;max-height:calc(100vh - 198px);overflow:auto}
+    .feature-help-panel{box-sizing:border-box;width:300px;background:linear-gradient(180deg,rgba(20,30,50,.98),rgba(13,20,36,.98));border:1px solid rgba(148,163,184,.22);border-radius:16px;padding:18px;color:#e5e7eb;box-shadow:0 14px 40px rgba(0,0,0,.22);position:fixed;right:22px;top:225px;z-index:30;max-height:calc(100vh - 245px);overflow:auto}
     .feature-help-panel h3{margin:0 0 8px;font-size:17px;color:#fff}.feature-help-panel .help-intro{margin:0 0 12px;color:#b8c3d4;line-height:1.45;font-size:13px}.feature-help-panel ul{margin:0;padding-left:18px}.feature-help-panel li{margin:0 0 10px;color:#dbe3ee;font-size:13px;line-height:1.45}.feature-help-panel .help-footer{border-top:1px solid rgba(148,163,184,.18);margin-top:14px;padding-top:12px;color:#9fb0c6;font-size:12px;line-height:1.45}.feature-help-panel .help-badge{display:inline-block;margin-bottom:10px;padding:4px 8px;border-radius:999px;background:rgba(59,130,246,.15);color:#93c5fd;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
-    @media (min-width:1100px){main.container{padding-right:340px!important}.feature-help-panel{right:20px}}
-    @media (max-width:1099px){.feature-help-panel{position:relative;right:auto;top:auto;width:auto;max-height:none;margin:0 0 18px}.feature-help-panel+*{margin-top:0}}
-    @media (max-width:700px){.feature-help-panel{border-radius:12px;padding:14px}.feature-help-panel li{margin-bottom:8px}}
+    .feature-help-titlebar{box-sizing:border-box;width:300px;position:fixed;right:22px;top:58px;z-index:31;padding:14px 18px;border:1px solid rgba(148,163,184,.18);border-radius:14px;background:rgba(20,30,50,.96);box-shadow:0 10px 28px rgba(0,0,0,.18);color:#fff;font-size:15px;font-weight:800;letter-spacing:.01em}.feature-help-titlebar small{display:block;margin-top:4px;color:#9fb0c6;font-size:11px;font-weight:600;letter-spacing:.03em}
+    @media (min-width:1100px){main.container{padding-right:340px!important}.feature-help-panel,.feature-help-titlebar{right:20px}}
+    @media (max-width:1099px){.feature-help-titlebar{position:relative;right:auto;top:auto;width:auto;margin:0 0 10px}.feature-help-panel{position:relative;right:auto;top:auto;width:auto;max-height:none;margin:0 0 18px}.feature-help-panel+*{margin-top:0}}
+    @media (max-width:700px){.feature-help-titlebar{border-radius:12px;padding:12px 14px}.feature-help-panel{border-radius:12px;padding:14px}.feature-help-panel li{margin-bottom:8px}}
   `;
   document.head.appendChild(style);
 
+  const titlebar = document.createElement("aside");
+  titlebar.className = "feature-help-titlebar";
+  titlebar.innerHTML = `${guide.title}<small>Feature Guide</small>`;
+
   const panel = document.createElement("aside");
   panel.className = "feature-help-panel";
-  panel.innerHTML = `
-    <div class="help-badge">Feature guide</div>
-    <h3>${guide.title}</h3>
-    <p class="help-intro">${guide.intro}</p>
-    <ul>${guide.points.map(x => `<li>${x}</li>`).join("")}</ul>
-    <div class="help-footer">${guide.footer}</div>
-  `;
+  panel.innerHTML = `<div class="help-badge">Feature guide</div><h3>${guide.title}</h3><p class="help-intro">${guide.intro}</p><ul>${guide.points.map(x => `<li>${x}</li>`).join("")}</ul><div class="help-footer">${guide.footer}</div>`;
 
   const hero = document.querySelector("main.container .hero") || document.querySelector("main.stock-page .stock-head");
   const main = hero?.closest("main");
   if (hero && main) hero.insertAdjacentElement("afterend", panel);
+  document.body.appendChild(titlebar);
 })();
