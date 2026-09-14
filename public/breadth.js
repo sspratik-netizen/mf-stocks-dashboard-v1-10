@@ -8,6 +8,7 @@ const dateEl = document.getElementById("breadthDate");
 const loadingOverlay = document.getElementById("breadthLoadingOverlay");
 
 let breadthData = null;
+let niftyPcr = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -38,6 +39,29 @@ function heatClass(pct) {
   if (pct >= 40) return "breadth-mid";
   if (pct >= 20) return "breadth-weak";
   return "breadth-bad";
+}
+
+function pcrClass(value) {
+  if (!Number.isFinite(Number(value))) return "";
+  const p = Number(value);
+  if (p > 1.3) return "breadth-good";
+  if (p >= 1.0) return "breadth-mid";
+  if (p >= 0.7) return "breadth-weak";
+  return "breadth-bad";
+}
+
+function pcrCell(row) {
+  const isLatest = breadthData.latest && row.date === breadthData.latest.date;
+  if (!isLatest || breadthData.index !== "NIFTY 50") {
+    return `<td class="breadth-cell breadth-pcr">—<small>PCR</small></td>`;
+  }
+  if (!niftyPcr || !Number.isFinite(Number(niftyPcr.pcr))) {
+    return `<td class="breadth-cell breadth-pcr">—<small>PCR unavailable</small></td>`;
+  }
+  const p = Number(niftyPcr.pcr);
+  return `<td class="breadth-cell breadth-pcr ${pcrClass(p)}">
+    ${p.toFixed(2)}<small>PCR · ${escapeHtml(niftyPcr.expiry || "nearest expiry")}</small>
+  </td>`;
 }
 
 let pinnedTooltip = null;
@@ -101,6 +125,7 @@ function render() {
       ${tooltipCell(row, "sma50", "Close > SMA50")}
       ${tooltipCell(row, "sma100", "Close > SMA100")}
       ${tooltipCell(row, "sma200", "Close > SMA200")}
+      ${pcrCell(row)}
     </tr>
   `).join("");
 
@@ -130,8 +155,11 @@ function render() {
   });
 
   const bench = breadthData.benchmarkLatest?.close;
+  const pcrStatus = breadthData.index === "NIFTY 50"
+    ? (niftyPcr?.pcr != null ? ` · PCR ${Number(niftyPcr.pcr).toFixed(2)}` : " · PCR unavailable")
+    : "";
   statusEl.textContent =
-    `${breadthData.daily.length} trading sessions · ${breadthData.priceDataLoaded}/${breadthData.constituentCount} constituents with price history · Latest constituents validated: ${breadthData.latest?.total || 0}/${breadthData.constituentCount} · ${bench ? `Index close ${Number(bench).toLocaleString("en-IN", {maximumFractionDigits:2})} · ` : ""}${breadthData.constituentSource || "source unavailable"}`;
+    `${breadthData.daily.length} trading sessions · ${breadthData.priceDataLoaded}/${breadthData.constituentCount} constituents with price history · Latest constituents validated: ${breadthData.latest?.total || 0}/${breadthData.constituentCount} · ${bench ? `Index close ${Number(bench).toLocaleString("en-IN", {maximumFractionDigits:2})}${pcrStatus} · ` : ""}${breadthData.constituentSource || "source unavailable"}`;
 
   document.getElementById("breadthUpdated").textContent =
     `Updated: ${new Date(breadthData.updatedAt).toLocaleString()}`;
@@ -163,11 +191,23 @@ async function loadIndices() {
   }
 }
 
+async function loadPcr() {
+  niftyPcr = null;
+  if (indexSelect.value !== "NIFTY 50") return;
+  try {
+    const response = await fetch("/api/nifty-pcr");
+    const data = await response.json();
+    if (response.ok && Number.isFinite(Number(data.pcr))) niftyPcr = data;
+  } catch (error) {
+    console.warn("Nifty PCR unavailable", error);
+  }
+}
+
 async function loadBreadth(forceRefresh = false) { window.showPageLoading?.("Loading Market Breadth…","Calculating breadth across the selected index.");
   refreshBtn.disabled = true;
   loadingOverlay?.classList.remove("hidden");
   tableBody.innerHTML = `
-    <tr><td colspan="6" class="empty loading-row">Calculating breadth… please wait.</td></tr>
+    <tr><td colspan="7" class="empty loading-row">Calculating breadth… please wait.</td></tr>
   `;
   statusEl.textContent = "Loading stock price history and calculating breadth...";
 
@@ -185,13 +225,14 @@ async function loadBreadth(forceRefresh = false) { window.showPageLoading?.("Loa
     }
 
     breadthData = data;
+    await loadPcr();
     render();
   } catch (error) {
     console.error(error);
     breadthData = null;
     tableBody.innerHTML = `
       <tr>
-        <td colspan="6" class="empty">Unable to load this index. ${escapeHtml(error.message)}</td>
+        <td colspan="7" class="empty">Unable to load this index. ${escapeHtml(error.message)}</td>
       </tr>
     `;
     dateEl.textContent = "No data";
