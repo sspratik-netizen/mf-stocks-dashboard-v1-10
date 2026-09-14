@@ -50,17 +50,25 @@ function pcrClass(value) {
   return "breadth-bad";
 }
 
+function pcrForDate(date) {
+  if (breadthData?.index !== "NIFTY 50" || !niftyPcr?.history) return null;
+  return niftyPcr.history.find(x => x.date === date) || null;
+}
+
 function pcrCell(row) {
-  const isLatest = breadthData.latest && row.date === breadthData.latest.date;
-  if (!isLatest || breadthData.index !== "NIFTY 50") {
+  if (breadthData.index !== "NIFTY 50") {
     return `<td class="breadth-cell breadth-pcr">—<small>PCR</small></td>`;
   }
-  if (!niftyPcr || !Number.isFinite(Number(niftyPcr.pcr))) {
+
+  const item = pcrForDate(row.date);
+  if (!item || !Number.isFinite(Number(item.pcr))) {
     return `<td class="breadth-cell breadth-pcr">—<small>PCR unavailable</small></td>`;
   }
-  const p = Number(niftyPcr.pcr);
+
+  const p = Number(item.pcr);
+  const live = niftyPcr.latest?.date === item.date;
   return `<td class="breadth-cell breadth-pcr ${pcrClass(p)}">
-    ${p.toFixed(2)}<small>PCR · ${escapeHtml(niftyPcr.expiry || "nearest expiry")}</small>
+    ${p.toFixed(2)}<small>PCR · ${escapeHtml(item.expiry || "nearest expiry")}${live ? " · Live" : ""}</small>
   </td>`;
 }
 
@@ -156,7 +164,7 @@ function render() {
 
   const bench = breadthData.benchmarkLatest?.close;
   const pcrStatus = breadthData.index === "NIFTY 50"
-    ? (niftyPcr?.pcr != null ? ` · PCR ${Number(niftyPcr.pcr).toFixed(2)}` : " · PCR unavailable")
+    ? (niftyPcr?.latest?.pcr != null ? ` · PCR ${Number(niftyPcr.latest.pcr).toFixed(2)} · 30-session history` : " · PCR unavailable")
     : "";
   statusEl.textContent =
     `${breadthData.daily.length} trading sessions · ${breadthData.priceDataLoaded}/${breadthData.constituentCount} constituents with price history · Latest constituents validated: ${breadthData.latest?.total || 0}/${breadthData.constituentCount} · ${bench ? `Index close ${Number(bench).toLocaleString("en-IN", {maximumFractionDigits:2})}${pcrStatus} · ` : ""}${breadthData.constituentSource || "source unavailable"}`;
@@ -191,13 +199,13 @@ async function loadIndices() {
   }
 }
 
-async function loadPcr() {
+async function loadPcr(forceRefresh = false) {
   niftyPcr = null;
   if (indexSelect.value !== "NIFTY 50") return;
   try {
-    const response = await fetch("/api/nifty-pcr");
+    const response = await fetch(`/api/nifty-pcr${forceRefresh ? "?refresh=1" : ""}`);
     const data = await response.json();
-    if (response.ok && Number.isFinite(Number(data.pcr))) niftyPcr = data;
+    if (response.ok && Array.isArray(data.history)) niftyPcr = data;
   } catch (error) {
     console.warn("Nifty PCR unavailable", error);
   }
@@ -225,7 +233,7 @@ async function loadBreadth(forceRefresh = false) { window.showPageLoading?.("Loa
     }
 
     breadthData = data;
-    await loadPcr();
+    await loadPcr(forceRefresh);
     render();
   } catch (error) {
     console.error(error);
