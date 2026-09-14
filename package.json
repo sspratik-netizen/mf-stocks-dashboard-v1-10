@@ -4,9 +4,9 @@
   "description": "Mutual fund, market breadth, chart pattern, stock and momentum watch dashboard",
   "main": "server.js",
   "scripts": {
-    "start": "node -r ./quantity-patch.js server-wrapper.js",
-    "dev": "node -r ./quantity-patch.js --watch server-wrapper.js",
-    "check": "node --check server.js && node --check server-wrapper.js && node --check quantity-patch.js"
+    "start": "node -r ./quantity-patch.js -r ./ownership-patch.js server-wrapper.js",
+    "dev": "node -r ./quantity-patch.js -r ./ownership-patch.js --watch server-wrapper.js",
+    "check": "node --check server.js && node --check server-wrapper.js && node --check quantity-patch.js && node --check ownership-patch.js"
   },
   "engines": {
     "node": ">=18"
