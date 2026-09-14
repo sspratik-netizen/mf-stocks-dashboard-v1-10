@@ -4,9 +4,9 @@
   "description": "Mutual fund, market breadth, chart pattern, stock and momentum watch dashboard",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "check": "node --check server.js"
+    "start": "node server-wrapper.js",
+    "dev": "node --watch server-wrapper.js",
+    "check": "node --check server.js && node --check server-wrapper.js"
   },
   "engines": {
     "node": ">=18"
