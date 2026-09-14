@@ -12,6 +12,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "express": "^5.1.0"
   }
 }
