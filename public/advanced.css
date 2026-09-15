@@ -18,3 +18,28 @@
 .opportunity-table .sma-signal{font-size:12px}.radar-sector{font-size:12px;overflow-wrap:anywhere}
 .mw-coverage{display:block;margin:3px 0 6px;color:#748296;font-size:10px;font-weight:700}
 @media(min-width:901px){.opportunity-table{min-width:0;width:100%}.opportunity-table .fund-name small{font-size:10px}.opportunity-table .radar-bucket{font-size:10px;padding:4px 6px}}
+
+/* v1.10.2 desktop fit: all 11 Opportunity Radar columns stay inside the viewport */
+@media(min-width:901px){
+  .opportunity-table{width:100%;min-width:0;table-layout:fixed;font-size:11px}
+  .opportunity-table th,.opportunity-table td{padding:7px 5px;overflow-wrap:anywhere;word-break:normal}
+  .opportunity-table th:nth-child(1),.opportunity-table td:nth-child(1){width:16%}
+  .opportunity-table th:nth-child(2),.opportunity-table td:nth-child(2){width:7%}
+  .opportunity-table th:nth-child(3),.opportunity-table td:nth-child(3){width:5%}
+  .opportunity-table th:nth-child(4),.opportunity-table td:nth-child(4){width:12%}
+  .opportunity-table th:nth-child(5),.opportunity-table td:nth-child(5){width:9%}
+  .opportunity-table th:nth-child(6),.opportunity-table td:nth-child(6){width:8%}
+  .opportunity-table th:nth-child(7),.opportunity-table td:nth-child(7){width:7%}
+  .opportunity-table th:nth-child(8),.opportunity-table td:nth-child(8){width:9%}
+  .opportunity-table th:nth-child(9),.opportunity-table td:nth-child(9){width:12%}
+  .opportunity-table th:nth-child(10),.opportunity-table td:nth-child(10){width:9%}
+  .opportunity-table th:nth-child(11),.opportunity-table td:nth-child(11){width:6%}
+  .opportunity-table .fund-name{font-size:12px}
+  .opportunity-table .fund-name small{font-size:9px}
+  .opportunity-table .sma-signal{font-size:10px}
+  .opportunity-table .radar-sector{font-size:10px}
+  .opportunity-table .radar-bucket{font-size:9px;padding:3px 5px}
+}
+@media(max-width:900px){
+  .opportunity-table{min-width:1100px}
+}
