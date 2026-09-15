@@ -1,6 +1,6 @@
 // Adds quarterly NSE shareholding-pattern data to the stock details page.
-// NSE shareholding filings are quarterly. We use the summary rows from the
-// linked XBRL/iXBRL filing and do not infer individual buyer/seller identity.
+// Uses the linked NSE iXBRL summary table. This is ownership-pattern data,
+// not transaction-level buyer/seller data.
 const express = require("express");
 
 let capturedApp = null;
@@ -21,10 +21,7 @@ const cache = new Map();
 const CACHE_TTL = 6 * 60 * 60 * 1000;
 
 async function nseCookies() {
-  const r = await fetch("https://www.nseindia.com/", {
-    headers: NSE_HEADERS,
-    signal: AbortSignal.timeout(10000)
-  });
+  const r = await fetch("https://www.nseindia.com/", { headers: NSE_HEADERS, signal: AbortSignal.timeout(10000) });
   const raw = r.headers.get("set-cookie") || "";
   return raw.split(/,(?=[^;,]+=)/).map(x => x.split(";")[0].trim()).filter(Boolean).join("; ");
 }
@@ -32,10 +29,7 @@ async function nseCookies() {
 async function fetchNseMaster(symbol) {
   const cookie = await nseCookies();
   const url = `https://www.nseindia.com/api/corporate-share-holdings-master?index=equities&symbol=${encodeURIComponent(symbol)}`;
-  const r = await fetch(url, {
-    headers: { ...NSE_HEADERS, ...(cookie ? { Cookie: cookie } : {}) },
-    signal: AbortSignal.timeout(15000)
-  });
+  const r = await fetch(url, { headers: { ...NSE_HEADERS, ...(cookie ? { Cookie: cookie } : {}) }, signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error(`NSE ownership HTTP ${r.status}`);
   const json = await r.json();
   const rows = Array.isArray(json) ? json : (Array.isArray(json && json.data) ? json.data : []);
@@ -48,11 +42,7 @@ async function fetchText(url) {
   if (target.startsWith("//")) target = `https:${target}`;
   else if (target.startsWith("/")) target = `https://www.nseindia.com${target}`;
   const r = await fetch(target, {
-    headers: {
-      "User-Agent": NSE_HEADERS["User-Agent"],
-      "Accept": "application/xml,text/xml,text/html,*/*",
-      "Referer": "https://www.nseindia.com/"
-    },
+    headers: { "User-Agent": NSE_HEADERS["User-Agent"], "Accept": "application/xml,text/xml,text/html,*/*", "Referer": "https://www.nseindia.com/" },
     signal: AbortSignal.timeout(15000)
   });
   if (!r.ok) throw new Error(`XBRL HTTP ${r.status}`);
@@ -61,18 +51,11 @@ async function fetchText(url) {
 
 function cleanText(value) {
   return String(value || "")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"')
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, " ").trim();
 }
 
-function stripTags(value) {
-  return cleanText(String(value || "").replace(/<[^>]*>/g, " "));
-}
+function stripTags(value) { return cleanText(String(value || "").replace(/<[^>]*>/g, " ")); }
 
 function htmlRows(html) {
   const rows = [];
@@ -93,8 +76,8 @@ function dateKey(value) {
   const s = String(value || "").trim().toUpperCase();
   const m = s.match(/^(\d{1,2})-([A-Z]{3})-(\d{4})$/);
   if (m) {
-    const months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
-    if (months[m[2]] !== undefined) return Date.UTC(Number(m[3]), months[m[2]], Number(m[1]));
+    const months = { JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11 };
+    if (months[m[2]] !== undefined) return Date.UTC(+m[3], months[m[2]], +m[1]);
   }
   const parsed = Date.parse(s);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -103,112 +86,76 @@ function dateKey(value) {
 function normalizeDate(value) {
   const s = String(value || "").trim().toUpperCase();
   const m = s.match(/^(\d{1,2})-([A-Z]{3})-(\d{4})$/);
-  return m ? `${m[1].padStart(2, "0")}-${m[2]}-${m[3]}` : (s || "Latest");
+  return m ? `${m[1].padStart(2,"0")}-${m[2]}-${m[3]}` : (s || "Latest");
 }
 
 function num(value) {
-  const n = Number(String(value || "").replace(/,/g, "").replace(/%/g, "").trim());
+  const n = Number(String(value ?? "").replace(/,/g, "").replace(/%/g, "").trim());
   return Number.isFinite(n) ? n : null;
 }
 
-// NSE/iXBRL filings use both "a" and "(a)" in the first summary column.
-function isSummaryRow(row) {
-  return row.length >= 7 && /^\(?[a-z]\)?$/i.test(String(row[0] || "").trim());
-}
+function isSummaryRow(row) { return row.length >= 8 && /^\(?[a-z]\)?$/i.test(String(row[0] || "").trim()); }
+function categoryKey(value) { return String(value || "").replace(/[^a-z0-9]/gi, "").toLowerCase(); }
 
-function categoryKey(value) {
-  return String(value || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-}
-
+// In the NSE public-shareholding summary table the percentage of total shares
+// is column 8 (index 7): [letter, category, shareholder-count, fully-paid,
+// partly-paid, DR, total-shares, shareholding-%]. Do NOT guess from numeric
+// values because share counts can also be <=100 for small issuers.
 function parseSummary(html) {
   const rows = htmlRows(html);
   let mf = null;
-  let fii = 0;
-  let fiiSeen = false;
-  let retail = 0;
-  let retailSeen = false;
+  let fii = 0, fiiSeen = false;
+  let retail = 0, retailSeen = false;
 
   for (const row of rows) {
     if (!isSummaryRow(row)) continue;
-
     const category = categoryKey(row[1]);
-    // In the NSE summary table the first shareholding percentage is normally
-    // column 7/8 depending on the filing template. Prefer the percentage-looking
-    // value and fall back to the last numeric percentage before demat columns.
-    const candidates = row.slice(2).map(num).filter(v => v !== null && v >= 0 && v <= 100);
-    const pct = candidates.length ? candidates[Math.min(5, candidates.length - 1)] : null;
-    if (pct === null) continue;
+    const pct = num(row[7]);
+    if (pct === null || pct < 0 || pct > 100) continue;
 
-    // Templates vary between "Mutual Funds", "Mutual Funds / UTI", etc.
-    if ((category === "mutualfunds" || category.startsWith("mutualfund")) && mf === null) {
-      mf = pct;
+    if (category === "mutualfunds" || category === "mutualfundsoruti" || category === "mutualfundoruti" || category === "mutualfund") {
+      if (mf === null) mf = pct;
       continue;
     }
 
-    if (
-      category === "foreignportfolioinvestorcategoryi" ||
-      category === "foreignportfolioinvestorcategoryii" ||
-      category === "foreigninstitutionalinvestor" ||
-      category === "foreignportfolioinvestor"
-    ) {
+    if (category === "foreignportfolioinvestorcategoryi" || category === "foreignportfolioinvestorcategoryii" || category === "foreignportfolioinvestor" || category === "foreigninstitutionalinvestor") {
       fii += pct;
       fiiSeen = true;
       continue;
     }
 
-    if (
-      category.indexOf("residentindividual") >= 0 ||
-      category.indexOf("nonresidentindividual") >= 0 ||
-      category === "nri" ||
-      category.indexOf("hinduundividedfamily") >= 0 ||
-      category === "huf"
-    ) {
+    // NSE templates use these as separate summary rows. Sum them because the
+    // UI's Retail / Individuals bucket intentionally aggregates individuals/HUF.
+    if (category === "individuals" || category === "individualshuf" || category === "individualshinduundividedfamily" || category === "residentindividual" || category === "residentindividualupto2lakhs" || category === "residentindividualexcessof2lakhs" || category === "nonresidentindividuals" || category === "nonresidentindividual" || category === "nri" || category === "hinduundividedfamily" || category === "huf") {
       retail += pct;
       retailSeen = true;
     }
   }
 
-  return {
-    mf,
-    fii: fiiSeen ? fii : null,
-    retail: retailSeen ? retail : null
-  };
+  return { mf, fii: fiiSeen ? fii : null, retail: retailSeen ? retail : null };
 }
 
 function getXbrlUrl(masterRow) {
-  return String(
-    masterRow.xbrl || masterRow.xbrl_link || masterRow.xbrlLink || masterRow.xbrl_file_link || ""
-  ).trim();
+  return String(masterRow.xbrl || masterRow.xbrl_link || masterRow.xbrlLink || masterRow.xbrl_file_link || "").trim();
 }
 
 async function buildQuarter(masterRow) {
-  const out = {
-    date: normalizeDate(masterRow.date),
-    mf: null,
-    fii: null,
-    retail: null,
-    promoter: num(masterRow.pr_and_prgrp)
-  };
-
+  const out = { date: normalizeDate(masterRow.date), mf: null, fii: null, retail: null, promoter: num(masterRow.pr_and_prgrp) };
   const xbrl = getXbrlUrl(masterRow);
   if (!xbrl) return out;
-
   try {
     const summary = parseSummary(await fetchText(xbrl));
-    out.mf = summary.mf;
-    out.fii = summary.fii;
-    out.retail = summary.retail;
-    return out;
+    out.mf = summary.mf; out.fii = summary.fii; out.retail = summary.retail;
+    console.log(`NSE ownership parsed ${out.date}: MF=${out.mf} FII=${out.fii} Retail=${out.retail}`);
   } catch (e) {
     console.warn(`NSE XBRL ownership ${out.date} unavailable:`, e.message);
-    return out;
   }
+  return out;
 }
 
 async function fetchOwnership(symbol) {
   const key = String(symbol || "").trim().toUpperCase();
   if (!/^[A-Z0-9&._-]{1,30}$/.test(key)) throw new Error("Invalid NSE symbol");
-
   const cached = cache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) return cached.data;
 
@@ -216,37 +163,24 @@ async function fetchOwnership(symbol) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const master = await fetchNseMaster(key);
-      const selected = master
-        .filter(x => getXbrlUrl(x) || x.date)
-        .sort((a, b) => dateKey(b.date) - dateKey(a.date))
-        .slice(0, 4);
-
+      const selected = master.filter(x => getXbrlUrl(x) && x.date).sort((a,b) => dateKey(b.date)-dateKey(a.date)).slice(0,4);
       if (!selected.length) throw new Error("NSE ownership filings unavailable");
-
       const rows = await Promise.all(selected.map(buildQuarter));
-      const result = {
-        symbol: key,
-        rows,
-        source: "NSE Corporate Filings · Shareholding Pattern + linked XBRL"
-      };
-      cache.set(key, { timestamp: Date.now(), data: result });
+      const result = { symbol:key, rows, source:"NSE Corporate Filings · Shareholding Pattern + linked XBRL" };
+      cache.set(key, { timestamp:Date.now(), data:result });
       return result;
     } catch (e) {
       lastError = e;
-      if (attempt === 0) await new Promise(r => setTimeout(r, 700));
+      if (attempt === 0) await new Promise(r => setTimeout(r,700));
     }
   }
-
   throw lastError || new Error("NSE ownership unavailable");
 }
 
 setImmediate(() => {
   if (!capturedApp) return;
-  capturedApp.get("/api/stock-ownership/:symbol", async (req, res) => {
-    try {
-      res.json(await fetchOwnership(req.params.symbol));
-    } catch (e) {
-      res.status(502).json({ error: e.message || "Ownership data unavailable" });
-    }
+  capturedApp.get("/api/stock-ownership/:symbol", async (req,res) => {
+    try { res.json(await fetchOwnership(req.params.symbol)); }
+    catch (e) { res.status(502).json({ error:e.message || "Ownership data unavailable" }); }
   });
 });
