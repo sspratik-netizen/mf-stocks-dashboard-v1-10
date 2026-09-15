@@ -29,16 +29,23 @@ function ownershipChange(a,b){const x=ownershipNum(a),y=ownershipNum(b);return x
 function renderOwnership(j){
   const rows=Array.isArray(j?.rows)?j.rows:[];
   const body=$("ownershipBody");
-  if(!rows.length){$("ownershipStatus").textContent="No data";body.innerHTML='<tr><td colspan="4">Ownership data is not available for this stock.</td></tr>';return}
-  const latest=rows[0], previous=rows[1];
-  $("oq0").textContent=latest.date||"Latest";$("oq1").textContent=previous?.date||"Previous";$("ownershipStatus").textContent=j.source||"NSE";
+  if(!rows.length){$("ownershipStatus").textContent="No data";body.innerHTML='<tr><td colspan="6">Ownership data is not available for this stock.</td></tr>';return}
+  const quarters=rows.slice(0,4);
+  const latest=quarters[0], previous=quarters[1];
+  ["oq0","oq1","oq2","oq3"].forEach((id,i)=>$(id).textContent=quarters[i]?.date||"—");
+  $("ownershipStatus").textContent=j.source||"NSE";
   const defs=[['MF','mf'],['FII / FPI','fii'],['Retail / Individuals','retail'],['Promoter','promoter']];
-  body.innerHTML=defs.map(([label,key])=>{const v=ownershipNum(latest[key]),p=ownershipNum(previous?.[key]),d=ownershipChange(v,p);const cls=d===null?'':d>0?'positive':d<0?'negative':'';return `<tr><td><b>${label}</b></td><td>${ownershipPct(v)}</td><td>${ownershipPct(p)}</td><td class="${cls}">${d===null?'—':(d>=0?'+':'')+d.toFixed(2)+' pp'}</td></tr>`}).join('');
-  const mf=ownershipChange(latest.mf,previous?.mf),fii=ownershipChange(latest.fii,previous?.fii),ret=ownershipChange(latest.retail,previous?.retail);
+  body.innerHTML=defs.map(([label,key])=>{
+    const vals=quarters.map(q=>ownershipNum(q?.[key]));
+    const d=ownershipChange(vals[0],vals[1]);
+    const cls=d===null?'':d>0?'positive':d<0?'negative':'';
+    return `<tr><td><b>${label}</b></td>${vals.map(v=>`<td>${ownershipPct(v)}</td>`).join('')}<td class="${cls}">${d===null?'—':(d>=0?'+':'')+d.toFixed(2)+' pp'}</td></tr>`;
+  }).join('');
+  const mf=ownershipChange(latest?.mf,previous?.mf),fii=ownershipChange(latest?.fii,previous?.fii),ret=ownershipChange(latest?.retail,previous?.retail);
   let signal='Ownership pattern unavailable';
   if(mf!==null&&fii!==null&&ret!==null){if(mf>0&&fii>0&&ret<0)signal='MF ↑ + FII ↑ + Retail ↓ · Institutional accumulation / retail ownership declining';else if(mf>0&&fii<0)signal='MF ↑ + FII ↓ · Mixed institutional ownership';else if(mf<0&&fii<0&&ret>0)signal='MF ↓ + FII ↓ + Retail ↑ · Institutional ownership declining';else if(mf>0&&fii>0)signal='MF ↑ + FII ↑ · Broad institutional ownership increase';else signal='Mixed ownership movement';}
   $("ownershipSignal").textContent=signal;
 }
-async function loadOwnership(){try{const r=await fetch('/api/stock-ownership/'+encodeURIComponent(symbol));const j=await r.json();if(!r.ok)throw Error(j.error||'Ownership unavailable');renderOwnership(j)}catch(e){$("ownershipStatus").textContent='Unavailable';$("ownershipBody").innerHTML=`<tr><td colspan="4">${esc(e.message||'NSE ownership data unavailable')}</td></tr>`;$("ownershipSignal").textContent='Ownership data could not be loaded.'}}
+async function loadOwnership(){try{const r=await fetch('/api/stock-ownership/'+encodeURIComponent(symbol));const j=await r.json();if(!r.ok)throw Error(j.error||'Ownership unavailable');renderOwnership(j)}catch(e){$("ownershipStatus").textContent='Unavailable';$("ownershipBody").innerHTML=`<tr><td colspan="6">${esc(e.message||'NSE ownership data unavailable')}</td></tr>`;$("ownershipSignal").textContent='Ownership data could not be loaded.'}}
 async function load(){window.showPageLoading?.("Loading Stock Chart…","Fetching up to 5 years of daily price history.");$("loading").classList.remove("hide");try{const r=await fetch("/api/stock/"+encodeURIComponent(symbol));const j=await r.json();if(!r.ok)throw Error(j.error||"Unable to load stock");data=j;render();draw();loadOwnership();$("symbol").value=data.symbol;history.replaceState({},"","/stock?symbol="+data.symbol+"&range="+range)}catch(e){$("name").textContent="Unable to load";$("meta").textContent=e.message}finally{$("loading").classList.add("hide");window.hidePageLoading?.();window.dispatchEvent(new Event("dashboard-loaded"));}}
 document.querySelectorAll("[data-r]").forEach(b=>b.classList.toggle("on",b.dataset.r===range));document.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{range=b.dataset.r;document.querySelectorAll("[data-r]").forEach(x=>x.classList.remove("on"));b.classList.add("on");if(data)draw()});$("go").onclick=()=>{const x=$("symbol").value.trim().toUpperCase();if(x){symbol=x;load()}};$("symbol").onkeydown=e=>{if(e.key==="Enter")$("go").click()};$("symbol").value=symbol;$("symbol").addEventListener("input",()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>searchStocks($("symbol").value.trim()),180)});document.addEventListener("click",e=>{if(!e.target.closest(".stock-search"))$("suggestions").classList.add("hidden")});load();
