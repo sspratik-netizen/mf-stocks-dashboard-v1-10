@@ -39,11 +39,15 @@ async function fetchNseMaster(symbol) {
   if (!r.ok) throw new Error(`NSE ownership HTTP ${r.status}`);
   const json = await r.json();
   const rows = Array.isArray(json) ? json : (Array.isArray(json && json.data) ? json.data : []);
-  return rows.filter(x => x && (x.date || x.xbrl));
+  return rows.filter(x => x && (x.date || x.xbrl || x.xbrl_link || x.xbrlLink));
 }
 
 async function fetchText(url) {
-  const r = await fetch(url, {
+  let target = String(url || "").trim();
+  if (!target) throw new Error("Missing XBRL URL");
+  if (target.startsWith("//")) target = `https:${target}`;
+  else if (target.startsWith("/")) target = `https://www.nseindia.com${target}`;
+  const r = await fetch(target, {
     headers: {
       "User-Agent": NSE_HEADERS["User-Agent"],
       "Accept": "application/xml,text/xml,text/html,*/*",
@@ -107,8 +111,9 @@ function num(value) {
   return Number.isFinite(n) ? n : null;
 }
 
+// NSE/iXBRL filings use both "a" and "(a)" in the first summary column.
 function isSummaryRow(row) {
-  return row.length >= 8 && /^[a-z]$/i.test(row[0] || "");
+  return row.length >= 7 && /^\(?[a-z]\)?$/i.test(String(row[0] || "").trim());
 }
 
 function categoryKey(value) {
@@ -125,16 +130,27 @@ function parseSummary(html) {
 
   for (const row of rows) {
     if (!isSummaryRow(row)) continue;
+
     const category = categoryKey(row[1]);
-    const pct = num(row[7]);
+    // In the NSE summary table the first shareholding percentage is normally
+    // column 7/8 depending on the filing template. Prefer the percentage-looking
+    // value and fall back to the last numeric percentage before demat columns.
+    const candidates = row.slice(2).map(num).filter(v => v !== null && v >= 0 && v <= 100);
+    const pct = candidates.length ? candidates[Math.min(5, candidates.length - 1)] : null;
     if (pct === null) continue;
 
-    if (category === "mutualfunds" && mf === null) {
+    // Templates vary between "Mutual Funds", "Mutual Funds / UTI", etc.
+    if ((category === "mutualfunds" || category.startsWith("mutualfund")) && mf === null) {
       mf = pct;
       continue;
     }
 
-    if (category === "foreignportfolioinvestorcategoryi" || category === "foreignportfolioinvestorcategoryii" || category === "foreigninstitutionalinvestor") {
+    if (
+      category === "foreignportfolioinvestorcategoryi" ||
+      category === "foreignportfolioinvestorcategoryii" ||
+      category === "foreigninstitutionalinvestor" ||
+      category === "foreignportfolioinvestor"
+    ) {
       fii += pct;
       fiiSeen = true;
       continue;
@@ -159,6 +175,12 @@ function parseSummary(html) {
   };
 }
 
+function getXbrlUrl(masterRow) {
+  return String(
+    masterRow.xbrl || masterRow.xbrl_link || masterRow.xbrlLink || masterRow.xbrl_file_link || ""
+  ).trim();
+}
+
 async function buildQuarter(masterRow) {
   const out = {
     date: normalizeDate(masterRow.date),
@@ -168,7 +190,7 @@ async function buildQuarter(masterRow) {
     promoter: num(masterRow.pr_and_prgrp)
   };
 
-  const xbrl = String(masterRow.xbrl || "").trim();
+  const xbrl = getXbrlUrl(masterRow);
   if (!xbrl) return out;
 
   try {
@@ -195,7 +217,7 @@ async function fetchOwnership(symbol) {
     try {
       const master = await fetchNseMaster(key);
       const selected = master
-        .filter(x => x.xbrl || x.date)
+        .filter(x => getXbrlUrl(x) || x.date)
         .sort((a, b) => dateKey(b.date) - dateKey(a.date))
         .slice(0, 4);
 
