@@ -121,6 +121,17 @@ function normalizeDate(value) {
   return m ? `${m[1].padStart(2, "0")}-${m[2]}-${m[3]}` : (s || "Latest");
 }
 
+function dateKey(value) {
+  const s = String(value || "").trim().toUpperCase();
+  const m = s.match(/^(\d{1,2})-([A-Z]{3})-(\d{4})$/);
+  if (m) {
+    const months = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+    if (months[m[2]] !== undefined) return Date.UTC(Number(m[3]), months[m[2]], Number(m[1]));
+  }
+  const parsed = Date.parse(s);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 async function buildQuarter(masterRow) {
   const date = normalizeDate(masterRow.date);
   const out = {
@@ -156,7 +167,7 @@ async function fetchOwnership(symbol) {
     try {
       const master = await fetchNseMaster(key);
       const selected = master.filter(x => x.xbrl || x.date)
-        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || ""))).slice(0, 4);
+        .sort((a, b) => dateKey(b.date) - dateKey(a.date)).slice(0, 4);
       if (!selected.length) throw new Error("NSE ownership filings unavailable");
       const rows = await Promise.all(selected.map(buildQuarter));
       const result = { symbol: key, rows, source: "NSE Corporate Filings · Shareholding Pattern + linked XBRL" };
