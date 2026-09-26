@@ -1638,52 +1638,47 @@ app.get("/api/breadth", async (req, res) => {
 
 
 
+let patternScanJob = { running: false, error: null };
+
+function startPatternScan(forceRefresh = false) {
+  if (patternScanJob.running) return;
+  patternScanJob = { running: true, error: null };
+  getPatternScan(forceRefresh)
+    .then(() => { patternScanJob = { running: false, error: null }; })
+    .catch(error => {
+      console.error("Background pattern scan failed:", error);
+      patternScanJob = { running: false, error: error.message || "Pattern scan failed" };
+    });
+}
+
 app.get("/api/pattern-chart", async (req, res) => {
   try {
-    const symbol = String(req.query.symbol || "").trim().toUpperCase();
-    const patternType = String(req.query.type || "").trim();
-    if (!symbol || !patternType) {
-      return res.status(400).json({error:"symbol and type are required"});
-    }
-
-    const scan = await getPatternScan(false);
-    const pattern = scan.patterns.find(p => p.symbol === symbol && p.type === patternType);
-    if (!pattern) {
-      return res.status(404).json({error:"Pattern candidate not found in the current scan"});
-    }
-
-    const cached = patternPriceCache.get(symbol);
-    let rows = cached?.rows;
-    if (!rows || Date.now()-cached.timestamp>PATTERN_CACHE_TTL_MS) {
-      rows = await fetchYahooHistoryForNseSymbol(symbol, Math.max(800, PATTERN_HISTORY_DAYS));
-      patternPriceCache.set(symbol,{timestamp:Date.now(),rows});
-    }
-
-    res.json(buildPatternChart(rows, pattern));
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({error:"Unable to build pattern chart", details:error.message});
-  }
+    const symbol=String(req.query.symbol||"").trim().toUpperCase();
+    const patternType=String(req.query.type||"").trim();
+    if(!symbol||!patternType)return res.status(400).json({error:"symbol and type are required"});
+    if(!patternScanCache.data){startPatternScan(false);return res.status(202).json({status:"scanning",message:"Nifty 500 pattern scan is still running. Please retry shortly."});}
+    const scan=await getPatternScan(false);
+    const pattern=scan.patterns.find(p=>p.symbol===symbol&&p.type===patternType);
+    if(!pattern)return res.status(404).json({error:"Pattern candidate not found in the current scan"});
+    const cached=patternPriceCache.get(symbol);
+    let rows=cached?.rows;
+    if(!rows||Date.now()-cached.timestamp>PATTERN_CACHE_TTL_MS){rows=await fetchYahooHistoryForNseSymbol(symbol,Math.max(800,PATTERN_HISTORY_DAYS));patternPriceCache.set(symbol,{timestamp:Date.now(),rows});}
+    res.json(buildPatternChart(rows,pattern));
+  }catch(error){console.error(error);res.status(500).json({error:"Unable to build pattern chart",details:error.message});}
 });
 
 app.get("/api/patterns", async (req,res)=>{
   try{
-    const data=await getPatternScan(req.query.refresh==="1");
     const scope=String(req.query.scope||"recent").toLowerCase();
     const type=String(req.query.type||"ALL");
-    let patterns=data.patterns.filter(p=>scope==="recent" ? p.ageTradingDays<=data.recentTradingDays : p.ageTradingDays>data.recentTradingDays);
-    if(type!=="ALL") patterns=patterns.filter(p=>p.type===type);
-    res.json({
-      ...data,
-      scope,
-      type,
-      patterns,
-      patternTypes:[...new Set(data.patterns.map(p=>p.type))].sort()
-    });
-  }catch(error){
-    console.error(error);
-    res.status(500).json({error:"Unable to scan Nifty 500 chart patterns",details:error.message});
-  }
+    const force=req.query.refresh==="1";
+    if(force){patternScanCache={timestamp:0,data:null,key:""};startPatternScan(true);return res.status(202).json({status:"scanning",message:"Nifty 500 scan started in the background. The page will update automatically."});}
+    if(!patternScanCache.data){startPatternScan(false);return res.status(202).json({status:"scanning",message:"Nifty 500 scan started in the background. The page will update automatically."});}
+    const data=await getPatternScan(false);
+    let patterns=data.patterns.filter(p=>scope==="recent"?p.ageTradingDays<=data.recentTradingDays:p.ageTradingDays>data.recentTradingDays);
+    if(type!=="ALL")patterns=patterns.filter(p=>p.type===type);
+    res.json({...data,scope,type,patterns,patternTypes:[...new Set(data.patterns.map(p=>p.type))].sort(),scanning:patternScanJob.running});
+  }catch(error){console.error(error);res.status(500).json({error:"Unable to scan Nifty 500 chart patterns",details:error.message});}
 });
 
 app.get("/breadth", (req, res) => {
