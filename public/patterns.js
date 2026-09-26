@@ -204,10 +204,32 @@ function renderPatternChart(d){
 }
 
 
+let scanPollTimer=null;
 async function load(force=false){
-  overlay.classList.remove("hidden");table.innerHTML=`<tr><td colspan="10" class="loading-row">Scanning Nifty 500… please wait.</td></tr>`;statusEl.textContent="Scanning…";
-  try{const r=await fetch(`/api/patterns?scope=${scope}&type=ALL${force?"&refresh=1":""}`),data=await r.json();if(!r.ok)throw new Error(data.details||data.error||"Pattern scan failed");rawData=data;document.getElementById("updated").textContent=`Updated ${new Date(data.updatedAt).toLocaleString()}`;document.getElementById("updatedBottom").textContent=`Updated ${new Date(data.updatedAt).toLocaleString()}`;typeEl.innerHTML=`<option value="ALL">All patterns</option>`+(data.patternTypes||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");renderCards();render();}catch(e){statusEl.textContent=`Error: ${e.message}`;table.innerHTML=`<tr><td colspan="10" class="empty error">${esc(e.message)}</td></tr>`;}finally{overlay.classList.add("hidden");}
+  if(scanPollTimer){clearTimeout(scanPollTimer);scanPollTimer=null;}
+  overlay.classList.remove("hidden");
+  table.innerHTML='<tr><td colspan="10" class="loading-row">Scanning Nifty 500 in the background…</td></tr>';
+  statusEl.textContent="Starting / checking Nifty 500 scan…";
+  try{
+    const r=await fetch(`/api/patterns?scope=${scope}&type=ALL${force?"&refresh=1":""}`);
+    const data=await r.json();
+    if(r.status===202||data.status==="scanning"){
+      statusEl.textContent=data.message||"Pattern scan is running…";
+      scanPollTimer=setTimeout(()=>load(false),5000);
+      return;
+    }
+    if(!r.ok)throw new Error(data.details||data.error||"Pattern scan failed");
+    rawData=data;
+    document.getElementById("updated").textContent=`Updated ${new Date(data.updatedAt).toLocaleString()}`;
+    document.getElementById("updatedBottom").textContent=`Updated ${new Date(data.updatedAt).toLocaleString()}`;
+    typeEl.innerHTML='<option value="ALL">All patterns</option>'+(data.patternTypes||[]).map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+    renderCards();render();
+  }catch(e){
+    statusEl.textContent=`Error: ${e.message}`;
+    table.innerHTML=`<tr><td colspan="10" class="empty error">${esc(e.message)}</td></tr>`;
+  }finally{overlay.classList.add("hidden");}
 }
+
 
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));b.classList.add("active");scope=b.dataset.scope;load(false);});
 [searchEl,typeEl,directionEl,confidenceEl].forEach(x=>x.addEventListener("input",()=>{if(x===typeEl)type=typeEl.value;render();}));
