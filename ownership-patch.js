@@ -139,16 +139,62 @@ function getXbrlUrl(masterRow) {
   return String(masterRow.xbrl || masterRow.xbrl_link || masterRow.xbrlLink || masterRow.xbrl_file_link || "").trim();
 }
 
-async function buildQuarter(masterRow) {
-  const out = { date: normalizeDate(masterRow.date), mf: null, fii: null, retail: null, promoter: num(masterRow.pr_and_prgrp) };
-  const xbrl = getXbrlUrl(masterRow);
-  if (!xbrl) return out;
+async function fetchUpstoxShareholding(symbol) {
+  const key = String(symbol || "").trim().toUpperCase();
+  if (!key) return null;
+  let company = null;
   try {
-    const summary = parseSummary(await fetchText(xbrl));
-    out.mf = summary.mf; out.fii = summary.fii; out.retail = summary.retail;
-    console.log(`NSE ownership parsed ${out.date}: MF=${out.mf} FII=${out.fii} Retail=${out.retail}`);
-  } catch (e) {
-    console.warn(`NSE XBRL ownership ${out.date} unavailable:`, e.message);
+    const r = await fetch("https://www.niftyindices.com/IndexConstituent/ind_nifty500list.csv", {
+      headers: {"User-Agent": NSE_HEADERS["User-Agent"], "Accept":"text/csv,text/plain,*/*", "Referer":"https://www.niftyindices.com/"},
+      signal: AbortSignal.timeout(10000)
+    });
+    if (r.ok) {
+      const lines = (await r.text()).replace(/^\uFEFF/, "").split(/\r?\n/).filter(Boolean);
+      if (lines.length) {
+        const h=lines[0].split(",").map(x=>x.trim().toLowerCase().replace(/[^a-z0-9]/g,""));
+        const si=h.indexOf("symbol"), ci=h.indexOf("companyname");
+        for(const line of lines.slice(1)){
+          const c=line.split(",").map(x=>x.trim().replace(/^"|"$/g,""));
+          if(si>=0&&ci>=0&&String(c[si]||"").toUpperCase()===key){company=c[ci];break;}
+        }
+      }
+    }
+  } catch (_) {}
+  if(!company)return null;
+  const slug=String(company).replace(/&/g,"and").replace(/\bLimited\b/ig,"Ltd").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-+|-+$/g,"").toLowerCase();
+  try{
+    const r=await fetch("https://upstox.com/stocks/"+slug+"-shareholding/",{headers:{"User-Agent":NSE_HEADERS["User-Agent"],"Accept":"text/html,application/xhtml+xml,*/*","Referer":"https://upstox.com/"},signal:AbortSignal.timeout(12000)});
+    if(!r.ok)return null;
+    const rows=htmlRows(await r.text());
+    const wanted={"promoters":"promoter","foreigninstitutions-fii":"fii","retailandother":"retail","mutualfunds":"mf"};
+    const out={mf:[],fii:[],retail:[],promoter:[]};
+    let headers=null;
+    for(const row of rows){
+      if(!row.length)continue;
+      const first=categoryKey(row[0]);
+      if(first==="category"&&row.length>=5){headers=row.slice(1).map(x=>String(x||"").trim());continue;}
+      const mapped=wanted[first]; if(!mapped||!headers)continue;
+      for(let i=0;i<Math.min(4,headers.length);i++){const v=num(row[i+1]);if(v!==null)out[mapped].push({date:headers[i],value:v});}
+    }
+    if(!out.mf.length&&!out.fii.length&&!out.retail.length&&!out.promoter.length)return null;
+    return out;
+  }catch(_){return null;}
+}
+
+async function buildQuarter(masterRow, fallbackRows) {
+  const out={date:normalizeDate(masterRow.date),mf:null,fii:null,retail:null,promoter:num(masterRow.pr_and_prgrp)};
+  const xbrl=getXbrlUrl(masterRow);
+  if(xbrl){
+    try{
+      const summary=parseSummary(await fetchText(xbrl));
+      out.mf=summary.mf; out.fii=summary.fii; out.retail=summary.retail;
+    }catch(e){ console.warn(`NSE XBRL ownership ${out.date} unavailable: ${e.message}`); }
+  }
+  if(out.mf===null&&out.fii===null&&out.retail===null&&fallbackRows){
+    const find=key=>{const x=fallbackRows[key]?.find(v=>normalizeDate(v.date)===out.date);return x?x.value:null;};
+    out.mf=find("mf"); out.fii=find("fii"); out.retail=find("retail");
+    if(out.promoter===null)out.promoter=find("promoter");
+    if(out.mf!==null||out.fii!==null||out.retail!==null)out._fallback=true;
   }
   return out;
 }
@@ -165,7 +211,7 @@ async function fetchOwnership(symbol) {
       const master = await fetchNseMaster(key);
       const selected = master.filter(x => getXbrlUrl(x) && x.date).sort((a,b) => dateKey(b.date)-dateKey(a.date)).slice(0,4);
       if (!selected.length) throw new Error("NSE ownership filings unavailable");
-      const rows = await Promise.all(selected.map(buildQuarter));
+      const fallback = await fetchUpstoxShareholding(key);\n      const rows = await Promise.all(selected.map(row => buildQuarter(row, fallback)));
       const result = { symbol:key, rows, source:"NSE Corporate Filings · Shareholding Pattern + linked XBRL" };
       cache.set(key, { timestamp:Date.now(), data:result });
       return result;
