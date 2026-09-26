@@ -211,7 +211,8 @@ async function fetchOwnership(symbol) {
       const master = await fetchNseMaster(key);
       const selected = master.filter(x => getXbrlUrl(x) && x.date).sort((a,b) => dateKey(b.date)-dateKey(a.date)).slice(0,4);
       if (!selected.length) throw new Error("NSE ownership filings unavailable");
-      const fallback = await fetchUpstoxShareholding(key);\n      const rows = await Promise.all(selected.map(row => buildQuarter(row, fallback)));
+      const fallback = await fetchUpstoxShareholding(key);
+      const rows = await Promise.all(selected.map(row => buildQuarter(row, fallback)));
       const result = { symbol:key, rows, source:"NSE Corporate Filings · Shareholding Pattern + linked XBRL" };
       cache.set(key, { timestamp:Date.now(), data:result });
       return result;
