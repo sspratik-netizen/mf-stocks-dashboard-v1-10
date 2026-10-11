@@ -129,7 +129,7 @@ module.exports = [
   {symbol:'ANNU',company:'Annu Projects Ltd.',listingDate:'2026-09-02',listingPrice:99},
   {symbol:'LUMINO',company:'Lumino Industries Ltd.',listingDate:'2026-09-03',listingPrice:82},
   {symbol:'ESDS',company:'ESDS Software Solution Ltd.',listingDate:'2026-09-04',listingPrice:429},
-  {symbol:'PRIORITY',company:'Priority Jewels Ltd.',listingDate:'2026-09-04',listingPrice:200}
+  {symbol:'PRIORITY',company:'Priority Jewels Ltd.',listingDate:'2026-09-04',listingPrice:200},
 
   // Added 11-Oct-2026: recently listed mainboard IPOs missing from the earlier seed list.
   // Symbols are search hints; the price resolver also uses company-name lookup.
